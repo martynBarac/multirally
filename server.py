@@ -23,7 +23,7 @@ class serverSock:
     def recv_and_echo(self):
         received = self.recv_all()
         self.send_msg(received[0], received[1])
-        return data, addr
+        return received
 
     def close(self):
         self.sock.close()
