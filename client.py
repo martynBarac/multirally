@@ -1,65 +1,16 @@
-import socket
+import pygame as pg
 import time
+from player import Player
+from network import *
+from constant import *
+import random
 
-
-class clientSock:
-    def __init__(self, ip, port):
-        self.IP = ip
-        self.PORT = port
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.CONNECTION_TIMEOUT = 5
-        self.sock.settimeout(1/60)
-
-    def __del__(self):
-        self.close()
-
-    def send_msg(self, msg):
-        self.sock.sendto(msg, (self.IP,self.PORT))
-        return None
-
-    def send_msg_handshake(self, msg):
-        """
-        Repeatedly sends the server a message until a handshake is received.
-        Use this if a message needs to get across to the server reliably
-
-        :param msg: The msg to send
-        :return: Returns True if handshake successful
-        """
-        print("handshaking...")
-        time_start = time.perf_counter()
-        while True:
-            self.sock.sendto(b'h,'+msg, (self.IP, self.PORT))
-            try:
-                received_message = self.receive_from_server()
-                if received_message == b'h2,'+msg:
-                    print("handshake successful")
-                    return True
-            except TimeoutError:
-                pass
-            time_end = time.perf_counter()
-            duration = time_end-time_start
-            if duration > self.CONNECTION_TIMEOUT:
-                print("handshake error: timed out")
-                return False
-
-            time.sleep(1/60)
-
-    def receive_from_server(self):
-        """
-        Will return a message if received
-        Else will return empty string
-        """
-        try:
-            msg, addr = self.sock.recvfrom(1024)
-        except TimeoutError:
-            msg = b''
-        return msg
-
-    def close(self):
-        self.sock.close()
-
+SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 
 addr = input("Enter server address: ")
+if not addr:
+    addr = "192.168.0.18"
+
 addr = addr.split(":")
 if len(addr) > 1:
     PORT = int(addr[1])
@@ -69,9 +20,76 @@ else:
 
 IP = addr[0]
 
-my_client = clientSock(IP, PORT)
+my_client = Network(IP, PORT)
+my_client.connect(IP, PORT)
+print("connected!")
+username = input("Enter your username: ")
+my_player = Player(32, 32, username)
+message = encode_player_data(my_player)
+my_client.send_msg_list(message)
 
-message_to_send = input("Send a message: ")
-while message_to_send:
-    my_client.send_msg_handshake(message_to_send.encode())
-    message_to_send = input("Send a message: ")
+
+
+player_list = []
+client_dict = {}
+while True:
+    msg = my_client.recv_msg_list()
+    print(msg)
+    if msg:
+        if len(msg) > 0:
+            if msg[0] == HEAD_PINFO:
+                new_player = decode_player_data(msg)
+                player_list = update_player_list(new_player, player_list)
+
+            if msg[0] == "START":
+                print("Starting Game")
+
+# Open up the pygame window now
+pg.init()
+screen = pg.display.set_mode(SCREEN_SIZE)
+clock = pg.time.Clock()
+
+dt = 0
+game_over = False
+while not game_over:
+    # Handle client inputs
+    for event in pg.event.get():
+        if event.type == pg.QUIT:
+            game_over = True
+
+    client_actions = ACTIONS.copy()
+    keyboard_inputs = pg.key.get_pressed()
+    if keyboard_inputs[pg.K_LEFT]:
+        client_actions[LEFTARROW] = True
+    if keyboard_inputs[pg.K_RIGHT]:
+        client_actions[RIGHTARROW] = True
+    if keyboard_inputs[pg.K_UP]:
+        client_actions[UPARROW] = True
+    if keyboard_inputs[pg.K_DOWN]:
+        client_actions[DOWNARROW] = True
+
+    message = encode_player_data(my_player)
+    my_client.send_msg(message, my_client.ADDR)
+
+    player_list = update_player_list(my_player, player_list)
+    # a 1 out of 10 chance to update the player based on where the server thinks it is. NOPE
+    random_update_chance = random.randrange(0, 10)
+    if True:
+        msg = my_client.recv_msg_list()
+        print(msg)
+        if msg:
+            if len(msg) > 0:
+                if msg[0] == HEAD_PINFO:
+                    new_player = decode_player_data(msg)
+                    player_list = update_player_list(new_player, player_list)
+
+    my_player.update(client_actions, dt)
+
+
+    # Draw everything
+    screen.fill((0, 0, 0))
+    for player in player_list:
+        pg.draw.rect(screen, (255, 255, 255), player.draw())
+
+    dt = clock.tick(60)
+    pg.display.update()
