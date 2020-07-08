@@ -43,6 +43,7 @@ while True:
 
             if msg[0] == "START":
                 print("Starting Game")
+                break
 
 # Open up the pygame window now
 pg.init()
@@ -69,7 +70,7 @@ while not game_over:
         client_actions[DOWNARROW] = True
 
     message = encode_player_data(my_player)
-    my_client.send_msg(message, my_client.ADDR)
+    my_client.send_msg_list(message)
 
     player_list = update_player_list(my_player, player_list)
     # a 1 out of 10 chance to update the player based on where the server thinks it is. NOPE

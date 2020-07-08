@@ -1,6 +1,8 @@
 import socket
 from player import Player
 
+BUFFERSIZE = 48
+
 HEAD_PINFO = "PINF"
 
 
@@ -28,7 +30,7 @@ class Network:
         Returns a comma seperated message as a list
         """
         try:
-            msg = self.sock.recv(1024)
+            msg = self.sock.recv(BUFFERSIZE)
             msg = bytes_to_list(msg)
             return msg[0]
 

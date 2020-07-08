@@ -18,6 +18,7 @@ my_server.sock.listen(MAXPLAYERS)
 
 maybe_readable = [my_server.sock]
 maybe_writeable = []
+sent_times = 0
 
 while True:
     readable, writeable, exception = select.select(maybe_readable, maybe_writeable, maybe_readable)
@@ -31,7 +32,7 @@ while True:
 
         else:
             print("waiting..")
-            msg = s.recv(1024)
+            msg = s.recv(BUFFERSIZE)
             addr = s.getsockname()
             msg = bytes_to_list(msg)[0]
             print(msg)
@@ -45,31 +46,44 @@ while True:
                     print(len(player_list))
 
     if len(player_list) >= MAXPLAYERS:
+
         for s in writeable:
             print("STARTING GAME!!")
             s.send(b"START:")
-        #break
+        sent_times += 1
+        if sent_times > BUFFERSIZE//6:
+            break
 
     else:
         for s in writeable:
             for pl in player_list:
                 msg = encode_player_data(pl)
                 msg = list_to_bytes(msg)
-                working = s.send(msg)
+                s.send(msg)
+
+    time.sleep(0.1)
 
 game_over = False
 while not game_over:
-    msg, addr = my_server.recv_msg_list()
-    if msg:
-        if msg[0] == HEAD_PINFO:
-            if addr in client_dict:
-                new_player = decode_player_data(msg)
-                player_list = update_player_list(new_player, player_list)
+    readable, writeable, exception = select.select(maybe_readable, maybe_writeable, maybe_readable)
+    for s in readable:
+        msg = s.recv(BUFFERSIZE)
+        addr = s.getsockname()
+        msg = bytes_to_list(msg)[0]
+        if msg:
+            if msg[0] == HEAD_PINFO:
+                if addr in client_dict:
+                    new_player = decode_player_data(msg)
+                    old_player_list = player_list.copy()
+                    player_list = update_player_list(new_player, player_list)
 
-    random_update_chance = random.randrange(0, 300)
-    if random_update_chance == 5:
-        for client in client_dict:
-            for player in player_list:
-                message = encode_player_data(player)
-                my_server.send_msg(message, client)
+    for s in writeable:
+        for pl in player_list:
+            msg = encode_player_data(pl)
+            msg = list_to_bytes(msg)
+            s.send(msg)
+            print(msg)
+
+    time.sleep(1/30)
+
 
