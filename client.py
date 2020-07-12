@@ -33,12 +33,12 @@ player_list = []
 client_dict = {}
 while True:
     msg = my_client.recv_msg_list()
-    print(msg)
     if msg:
         if len(msg) > 0:
             if msg[0] == HEAD_PINFO:
-                new_player = decode_player_data(msg)
-                player_list = update_player_list(new_player, player_list)
+                if len(msg) == 5:
+                    new_player = decode_player_data(msg)
+                    player_list = update_player_list(new_player, player_list)
 
             if msg[0] == "START":
                 print("Starting Game")
@@ -74,12 +74,14 @@ while not game_over:
     msg = my_client.recv_msg_list()
     if msg:
         if len(msg) > 0:
+            print(msg)
             if msg[0] == HEAD_PINFO:
-                new_player = decode_player_data(msg)
-                if new_player.name == my_player.name:
-                    my_player = new_player
+                if len(msg) == 5:
+                    new_player = decode_player_data(msg)
+                    if new_player.name == my_player.name:
+                        my_player = new_player
 
-                player_list = update_player_list(new_player, player_list)
+                    player_list = update_player_list(new_player, player_list)
 
     my_player.update(client_actions, dt)
     player_list = update_player_list(my_player, player_list)

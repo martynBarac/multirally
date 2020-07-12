@@ -35,8 +35,10 @@ while True:
         else:
             print("waiting..")
             msg = s.recv(BUFFERSIZE)
-            addr = s.getsockname()
-            msg = bytes_to_list(msg)[0]
+            msg = bytes_to_list(msg)
+            if len(msg) > 0:
+                msg = msg[0]
+            addr = s.getpeername()
             print(msg)
             if msg:
                 if msg[0] == HEAD_PINFO:
@@ -73,9 +75,9 @@ while not game_over:
     readable, writeable, exception = select.select(maybe_readable, maybe_writeable, maybe_readable)
     for s in readable:
         msg = s.recv(BUFFERSIZE)
-        addr = s.getsockname()
         msg = bytes_to_list(msg)[0]
-        print(client_dict)
+        addr = s.getpeername()
+
         if msg:
             if msg[0] == HEAD_PLAYERINPUT:
                 player_actions = decode_action_data(msg)
@@ -90,6 +92,7 @@ while not game_over:
         for client_addr in client_dict:
             pl = client_dict[client_addr][1]
             msg = encode_player_data(pl)
+            print(msg)
             msg = list_to_bytes(msg)
             s.send(msg)
 

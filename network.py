@@ -1,7 +1,8 @@
 import socket
+import random
 from player import Player
 
-BUFFERSIZE = 48
+BUFFERSIZE = 500
 
 HEAD_PINFO = "PINF"
 HEAD_USERINFO = "UINF"
@@ -42,7 +43,7 @@ class Network:
             msg = self.sock.recv(BUFFERSIZE)
             msg = bytes_to_list(msg)
             if msg != []:
-                return msg[0]
+                return random.choice(msg) #We will have so many messages in the buffer! Just pick one from random to read.
             else:
                 return ["NULL"]
 
