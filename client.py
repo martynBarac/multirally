@@ -76,10 +76,12 @@ while not game_over:
         if len(msg) > 0:
             if msg[0] == HEAD_PINFO:
                 new_player = decode_player_data(msg)
+                if new_player.name == my_player.name:
+                    my_player = new_player
+
                 player_list = update_player_list(new_player, player_list)
 
     my_player.update(client_actions, dt)
-    print(my_player.name)
     player_list = update_player_list(my_player, player_list)
 
     # Draw everything
