@@ -4,7 +4,9 @@ from player import Player
 BUFFERSIZE = 48
 
 HEAD_PINFO = "PINF"
-
+HEAD_USERINFO = "UINF"
+HEAD_PLAYERINPUT = "PINP"
+TICKRATE = 30
 
 class Network:
     def __init__(self, ip, port):
@@ -22,7 +24,14 @@ class Network:
         Input a list of strings as a message
         """
         msg = list_to_bytes(msg)
-        self.sock.send(msg)
+        msg_length = len(msg)
+        sent_bytes = 0
+        while msg_length > sent_bytes:
+            sent = self.sock.send(msg[sent_bytes:]) #Send the unsent parts of the message
+            if sent == 0:
+                raise RuntimeError("socket connection broken")
+            sent_bytes += sent
+
         return None
 
     def recv_msg_list(self):
@@ -32,7 +41,10 @@ class Network:
         try:
             msg = self.sock.recv(BUFFERSIZE)
             msg = bytes_to_list(msg)
-            return msg[0]
+            if msg != []:
+                return msg[0]
+            else:
+                return ["NULL"]
 
         except BlockingIOError:
             return None, None
@@ -72,6 +84,28 @@ def encode_player_data(pl):
     attributes = [HEAD_PINFO, name, xpos, ypos, health]
     _bytes = attributes
     return _bytes
+
+
+def encode_action_data(actions):
+    """
+    Action list input dict is {UP:BOOL,LEFT:BOOL,RIGHT:BOOL, DOWN:BOOL}
+    Action list output is [up,left,right,down]
+    """
+    action_list = [HEAD_PLAYERINPUT]
+    for action in actions:
+        action_list.append(str(actions[action]))
+    return action_list
+
+
+def decode_action_data(actions):
+    """Inverse of encode_action_data"""
+    action_dict = {1: False, 2: False, 3: False, 4: False}
+
+    for i in range(1,5,1):
+        if actions[i] == "True":
+            action_dict[i] = True
+
+    return action_dict
 
 
 def update_player_list(new_player, player_list):

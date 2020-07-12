@@ -4,14 +4,15 @@ from network import *
 from constant import *
 import random
 import select
+import pygame as pg
 
 print("Initialising")
-my_server = Network("192.168.0.18", 27014)
+my_server = Network("192.168.0.25", 27014)
 my_server.sock.setblocking(0)
 my_server.sock.bind((my_server.IP, my_server.PORT))
 
 player_list = []
-client_dict = {} # Client dict client_address:(username, Player)
+client_dict = {} # Client dict client_address:[username, Player, inputs]
 MAXPLAYERS = 2
 
 my_server.sock.listen(MAXPLAYERS)
@@ -19,6 +20,7 @@ my_server.sock.listen(MAXPLAYERS)
 maybe_readable = [my_server.sock]
 maybe_writeable = []
 sent_times = 0
+dt = 0
 
 while True:
     readable, writeable, exception = select.select(maybe_readable, maybe_writeable, maybe_readable)
@@ -41,7 +43,7 @@ while True:
                     new_player = decode_player_data(msg)
                     player_list = update_player_list(new_player, player_list)
                     username = new_player.name
-                    client_dict[addr] = (username, new_player)
+                    client_dict[addr] = [username, new_player, ACTIONS]
                     print("Player: " + str(addr), username + " connected!")
                     print(len(player_list))
 
@@ -63,27 +65,33 @@ while True:
 
     time.sleep(0.1)
 
+
+clock = pg.time.Clock()
 game_over = False
+print(len(maybe_readable))
 while not game_over:
     readable, writeable, exception = select.select(maybe_readable, maybe_writeable, maybe_readable)
     for s in readable:
         msg = s.recv(BUFFERSIZE)
         addr = s.getsockname()
         msg = bytes_to_list(msg)[0]
+        print(client_dict)
         if msg:
-            if msg[0] == HEAD_PINFO:
-                if addr in client_dict:
-                    new_player = decode_player_data(msg)
-                    old_player_list = player_list.copy()
-                    player_list = update_player_list(new_player, player_list)
+            if msg[0] == HEAD_PLAYERINPUT:
+                player_actions = decode_action_data(msg)
+                client_dict[addr][2] = player_actions
+
+    for client_addr in client_dict:
+        new_player = client_dict[client_addr][1]
+        player_actions = client_dict[client_addr][2]
+        new_player.update(player_actions, dt)
 
     for s in writeable:
-        for pl in player_list:
+        for client_addr in client_dict:
+            pl = client_dict[client_addr][1]
             msg = encode_player_data(pl)
             msg = list_to_bytes(msg)
             s.send(msg)
-            print(msg)
 
-    time.sleep(1/30)
-
-
+    dt = TICKRATE
+    time.sleep(1/TICKRATE)

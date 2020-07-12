@@ -9,12 +9,11 @@ SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 
 addr = input("Enter server address: ")
 if not addr:
-    addr = "192.168.0.18"
+    addr = "192.168.0.25"
 
 addr = addr.split(":")
 if len(addr) > 1:
     PORT = int(addr[1])
-
 else:
     PORT = 27014
 
@@ -69,28 +68,24 @@ while not game_over:
     if keyboard_inputs[pg.K_DOWN]:
         client_actions[DOWNARROW] = True
 
-    message = encode_player_data(my_player)
+    message = encode_action_data(client_actions)
     my_client.send_msg_list(message)
 
-    player_list = update_player_list(my_player, player_list)
-    # a 1 out of 10 chance to update the player based on where the server thinks it is. NOPE
-    random_update_chance = random.randrange(0, 10)
-    if True:
-        msg = my_client.recv_msg_list()
-        print(msg)
-        if msg:
-            if len(msg) > 0:
-                if msg[0] == HEAD_PINFO:
-                    new_player = decode_player_data(msg)
-                    player_list = update_player_list(new_player, player_list)
+    msg = my_client.recv_msg_list()
+    if msg:
+        if len(msg) > 0:
+            if msg[0] == HEAD_PINFO:
+                new_player = decode_player_data(msg)
+                player_list = update_player_list(new_player, player_list)
 
     my_player.update(client_actions, dt)
-
+    print(my_player.name)
+    player_list = update_player_list(my_player, player_list)
 
     # Draw everything
     screen.fill((0, 0, 0))
     for player in player_list:
         pg.draw.rect(screen, (255, 255, 255), player.draw())
 
-    dt = clock.tick(60)
+    dt = clock.tick(FRAMERATE)
     pg.display.update()

@@ -9,6 +9,7 @@ DOWNARROW = 4
 class Player:
     def __init__(self, x, y, name):
         self.name = name
+        self.id = -1
         self.xpos = x
         self.ypos = y
         self.health = 100
