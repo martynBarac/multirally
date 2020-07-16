@@ -123,6 +123,6 @@ while not game_over:
     for player in player_list:
         pg.draw.rect(screen, player.colour, player.draw())
     for wall in lvl0:
-        pg.draw.rect(screen, (255, 255, 255), [wall[0], wall[1], 16, 16])
+        pg.draw.rect(screen, (255, 255, 255), [wall[0], wall[1], 64, 64])
     dt = clock.tick(FRAMERATE)
     pg.display.update()

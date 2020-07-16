@@ -1,4 +1,5 @@
 import pygame as pg
+from level import *
 
 UPARROW = 1
 LEFTARROW = 2
@@ -12,6 +13,8 @@ class Player:
         self.id = -1
         self.xpos = x
         self.ypos = y
+        self.w = 16
+        self.h = 16
         self.xvel = 0
         self.yvel = 0
         self.xacc = 0
@@ -58,7 +61,13 @@ class Player:
 
         self.xpos += self.xvel*dt
         self.ypos += self.yvel*dt
-
+        
+        for wall in lvl0:
+            if not self.xpos > wall[0] + 64 and not self.xpos + self.w < wall[0]:
+                if not self.ypos > wall[1] + 64 and not self.ypos + self.w < wall[1]:
+                    self.xpos -= self.xvel*dt
+                    self.ypos -= self.yvel*dt
+                    
     def draw(self):
         rectangle = pg.Rect(self.xpos, self.ypos, 16, 16)
         return rectangle
