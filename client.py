@@ -42,13 +42,15 @@ while True:
     if msg:
         if len(msg) > 0:
             if msg[0] == HEAD_PINFO:
-                new_player = decode_player_data(msg, "ERR", 32, 32, 100, (255, 255, 255))
+                new_player = decode_player_data(msg, "ERR", 32, 32, 0, 0, 100, (255, 255, 255))
                 existing_player = find_player_from_name(new_player.name, player_list)
                 if existing_player:
                     new_player = decode_player_data(msg,
                                                     existing_player.name,
                                                     existing_player.xpos,
                                                     existing_player.ypos,
+                                                    existing_player.xvel,
+                                                    existing_player.yvel,
                                                     existing_player.health,
                                                     existing_player.colour
                                                     )
@@ -90,13 +92,15 @@ while not game_over:
         if len(msg) > 0:
             print(msg)
             if msg[0] == HEAD_PINFO:
-                new_player = decode_player_data(msg, "ERR", 32, 32, 100, (255, 255, 255))
+                new_player = decode_player_data(msg, "ERR", 32, 32, 0, 0, 100, (255, 255, 255))
                 existing_player = find_player_from_name(new_player.name, player_list)
                 if existing_player:
                     new_player = decode_player_data(msg,
                                                     existing_player.name,
                                                     existing_player.xpos,
                                                     existing_player.ypos,
+                                                    existing_player.xvel,
+                                                    existing_player.yvel,
                                                     existing_player.health,
                                                     existing_player.colour
                                                     )

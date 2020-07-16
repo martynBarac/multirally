@@ -57,7 +57,7 @@ class Network:
         self.sock.close()
 
 
-def decode_player_data(player, name, xpos, ypos, health, colour):
+def decode_player_data(player, name, xpos, ypos, xvel, yvel, health, colour):
     """
     :param name: The default name
     :param player: The encoded player data

@@ -47,11 +47,13 @@ while True:
                         new_player = decode_player_data(msg, existing_player.name,
                                                         existing_player.xpos,
                                                         existing_player.ypos,
+                                                        existing_player.xvel,
+                                                        existing_player.yvel,
                                                         existing_player.health,
                                                         existing_player.colour
                                                         )
                     else:
-                        new_player = decode_player_data(msg, "ERR", 32, 32, 100, (255, 255, 255))
+                        new_player = decode_player_data(msg, "ERR", 32, 32, 0, 0, 100, (255, 255, 255))
 
                     player_list = update_player_list(new_player, player_list)
                     username = new_player.name
