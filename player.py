@@ -1,5 +1,6 @@
 import pygame as pg
 from level import *
+from math import *
 
 UPARROW = 1
 LEFTARROW = 2
@@ -64,9 +65,12 @@ class Player:
         
         #COLLISION
         if self.check_col():
+            mag = sqrt(self.xvel**2 + self.yvel**2)
+            dirx = self.xvel / mag
+            diry = self.yvel / mag
             while self.check_col():
-                self.xpos -= self.xvel*dt
-                self.ypos -= self.yvel*dt
+                self.xpos -= dirx
+                self.ypos -= diry
     
     def check_col(self):
         for wall in lvl0:
