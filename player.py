@@ -74,8 +74,8 @@ class Player:
     
     def check_col(self):
         for wall in lvl0:
-            if not self.xpos > wall[0] + 64 and not self.xpos + self.w < wall[0]:
-                if not self.ypos > wall[1] + 64 and not self.ypos + self.w < wall[1]:
+            if not self.xpos > wall[0] + 16 and not self.xpos + self.w < wall[0]:
+                if not self.ypos > wall[1] + 16 and not self.ypos + self.w < wall[1]:
                     return wall
         return False
     def draw(self):
