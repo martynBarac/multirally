@@ -3,6 +3,7 @@ import time
 from player import Player
 from network import *
 from constant import *
+from level import *
 import random
 
 SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
@@ -121,6 +122,7 @@ while not game_over:
     screen.fill((0, 0, 0))
     for player in player_list:
         pg.draw.rect(screen, player.colour, player.draw())
-
+    for wall in lvl0:
+        pg.draw.rect(screen, (255, 255, 255), [wall[0], wall[1], 16, 16])
     dt = clock.tick(FRAMERATE)
     pg.display.update()

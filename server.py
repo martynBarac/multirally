@@ -7,13 +7,13 @@ import select
 import pygame as pg
 
 print("Initialising")
-my_server = Network("192.168.0.25", 27014)
+my_server = Network("192.168.0.22", 27014)
 my_server.sock.setblocking(0)
 my_server.sock.bind((my_server.IP, my_server.PORT))
 
 player_list = []
 client_dict = {} # Client dict client_address:[username, Player, inputs]
-MAXPLAYERS = 2
+MAXPLAYERS = 1
 
 my_server.sock.listen(MAXPLAYERS)
 
