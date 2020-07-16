@@ -62,12 +62,18 @@ class Player:
         self.xpos += self.xvel*dt
         self.ypos += self.yvel*dt
         
+        #COLLISION
+        if self.check_col():
+            while self.check_col():
+                self.xpos -= self.xvel*dt
+                self.ypos -= self.yvel*dt
+    
+    def check_col(self):
         for wall in lvl0:
             if not self.xpos > wall[0] + 64 and not self.xpos + self.w < wall[0]:
                 if not self.ypos > wall[1] + 64 and not self.ypos + self.w < wall[1]:
-                    self.xpos -= self.xvel*dt
-                    self.ypos -= self.yvel*dt
-                    
+                    return wall
+        return False
     def draw(self):
         rectangle = pg.Rect(self.xpos, self.ypos, 16, 16)
         return rectangle
