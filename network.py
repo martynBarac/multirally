@@ -57,7 +57,16 @@ class Network:
         self.sock.close()
 
 
-def decode_player_data(player):
+def decode_player_data(player, name, xpos, ypos, health, colour):
+    """
+    :param name: The default name
+    :param player: The encoded player data
+    :param xpos: The default xposition if position data was not recieved
+    :param ypos: The default yposition if position data was not recieved
+    :param health: The default health if health data was not recieved
+    :param colour: The default colour if colour data was not recieved
+    :return: The player object built from the encoded data
+    """
     _bytes = player.copy()
 
     attributes = _bytes
@@ -65,24 +74,45 @@ def decode_player_data(player):
         print("decode_player_data: Could not decode data! ")
         return None
 
-    name = attributes[1]
-    xpos = float(attributes[2])
-    ypos = float(attributes[3])
-    health = int(attributes[4])
+    for i in range(1, len(attributes), 1):
+        head = attributes[i][0]
+        if head == 'n':
+            name = attributes[i][1:]
+        elif head == 'x':
+            xpos = float(attributes[i][1:])
+        elif head == 'y':
+            ypos = float(attributes[i][1:])
+        elif head == 'X':
+            xvel = float(attributes[i][1:])
+        elif head == 'Y':
+            yvel = float(attributes[i][1:])
+        elif head == 'h':
+            health = int(attributes[i][1:])
+        elif head == 'c':
+            colour = decode_rgb(attributes[i][1:])
+
     pl = Player(xpos, ypos, name)
     pl.health = health
+    pl.colour = colour
+    pl.xvel = xvel
+    pl.yvel = yvel
     return pl
 
 
-def encode_player_data(pl):
+def encode_player_data(pl, send_colour = False):
     """
     Converts player class into a list of variables
     """
-    name = pl.name
-    xpos = str(pl.xpos)
-    ypos = str(pl.ypos)
-    health = str(pl.health)
-    attributes = [HEAD_PINFO, name, xpos, ypos, health]
+    name = 'n'+pl.name
+    xpos = 'x'+str(pl.xpos)
+    ypos = 'y'+str(pl.ypos)
+    xvel = 'X'+str(pl.xvel)
+    yvel = 'Y'+str(pl.yvel)
+    health = 'h'+str(pl.health)
+    attributes = [HEAD_PINFO, name, xpos, ypos, xvel, yvel, health]
+    if send_colour:
+        colour = 'c'+encode_rgb(pl.colour)
+        attributes.append(colour)
     _bytes = attributes
     return _bytes
 
@@ -121,6 +151,36 @@ def update_player_list(new_player, player_list):
     return player_list
 
 
+COL_DICT = {'a': 0, 'b': 50, 'c': 100, 'd': 150, 'e': 200, 'f': 250}
+
+
+def decode_rgb(code):
+    if len(code) != 3:
+        print("BAD CODE!")
+        return (255, 255, 255)
+    r = COL_DICT[code[0]]
+    g = COL_DICT[code[1]]
+    b = COL_DICT[code[2]]
+    return (r, g, b)
+
+
+def encode_rgb(rgb):
+    letters = ['a', 'a', 'a']
+    for i in range(len(rgb)):
+        for col_letter in COL_DICT:
+            if abs(rgb[i] - COL_DICT[col_letter]) < 25:
+                letters[i] = col_letter
+    return letters[0]+letters[1]+letters[2]
+
+
+def find_player_from_name(player_name, player_list):
+    found_player = None
+    for player in player_list:
+        if player.name == player_name:
+            found_player = player
+    return found_player
+
+
 def bytes_to_list(_bytes):
     _bytes = _bytes.decode()
     _bytes = _bytes.split(':')
@@ -128,8 +188,6 @@ def bytes_to_list(_bytes):
     for m in _bytes:
         if m:
             _list.append(m.split(','))
-
-    return _list
     return _list
 
 
@@ -140,10 +198,4 @@ def list_to_bytes(lst):
     lst = lst.encode()
     return lst
 
-"""
-def make_list_string(lst):
-    new_lst = []
-    for item in lst:
-        new_lst.append(str(item))
-    return new_lst
-"""
+

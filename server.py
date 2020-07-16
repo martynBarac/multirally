@@ -42,7 +42,17 @@ while True:
             print(msg)
             if msg:
                 if msg[0] == HEAD_PINFO:
-                    new_player = decode_player_data(msg)
+                    if addr in client_dict:
+                        client_dict[addr][1] = existing_player
+                        new_player = decode_player_data(msg, existing_player.name,
+                                                        existing_player.xpos,
+                                                        existing_player.ypos,
+                                                        existing_player.health,
+                                                        existing_player.colour
+                                                        )
+                    else:
+                        new_player = decode_player_data(msg, "ERR", 32, 32, 100, (255, 255, 255))
+
                     player_list = update_player_list(new_player, player_list)
                     username = new_player.name
                     client_dict[addr] = [username, new_player, ACTIONS]
@@ -58,12 +68,11 @@ while True:
         if sent_times > BUFFERSIZE//6:
             break
 
-    else:
-        for s in writeable:
-            for pl in player_list:
-                msg = encode_player_data(pl)
-                msg = list_to_bytes(msg)
-                s.send(msg)
+    for s in writeable:
+        for pl in player_list:
+            msg = encode_player_data(pl, True)
+            msg = list_to_bytes(msg)
+            s.send(msg)
 
     time.sleep(0.1)
 
@@ -92,7 +101,6 @@ while not game_over:
         for client_addr in client_dict:
             pl = client_dict[client_addr][1]
             msg = encode_player_data(pl)
-            print(msg)
             msg = list_to_bytes(msg)
             s.send(msg)
 

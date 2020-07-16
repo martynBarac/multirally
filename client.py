@@ -23,10 +23,16 @@ my_client = Network(IP, PORT)
 my_client.connect(IP, PORT)
 print("connected!")
 username = input("Enter your username: ")
-my_player = Player(32, 32, username)
-message = encode_player_data(my_player)
-my_client.send_msg_list(message)
+colour = input("Enter your colour")
+if not colour:
+    colour = (255, 255, 255)
+else:
+    colour = decode_rgb(colour)
 
+my_player = Player(32, 32, username)
+my_player.colour = colour
+message = encode_player_data(my_player, True)
+my_client.send_msg_list(message)
 
 
 player_list = []
@@ -36,9 +42,17 @@ while True:
     if msg:
         if len(msg) > 0:
             if msg[0] == HEAD_PINFO:
-                if len(msg) == 5:
-                    new_player = decode_player_data(msg)
-                    player_list = update_player_list(new_player, player_list)
+                new_player = decode_player_data(msg, "ERR", 32, 32, 100, (255, 255, 255))
+                existing_player = find_player_from_name(new_player.name, player_list)
+                if existing_player:
+                    new_player = decode_player_data(msg,
+                                                    existing_player.name,
+                                                    existing_player.xpos,
+                                                    existing_player.ypos,
+                                                    existing_player.health,
+                                                    existing_player.colour
+                                                    )
+                player_list = update_player_list(new_player, player_list)
 
             if msg[0] == "START":
                 print("Starting Game")
@@ -76,20 +90,33 @@ while not game_over:
         if len(msg) > 0:
             print(msg)
             if msg[0] == HEAD_PINFO:
-                if len(msg) == 5:
-                    new_player = decode_player_data(msg)
-                    if new_player.name == my_player.name:
-                        my_player = new_player
+                new_player = decode_player_data(msg, "ERR", 32, 32, 100, (255, 255, 255))
+                existing_player = find_player_from_name(new_player.name, player_list)
+                if existing_player:
+                    new_player = decode_player_data(msg,
+                                                    existing_player.name,
+                                                    existing_player.xpos,
+                                                    existing_player.ypos,
+                                                    existing_player.health,
+                                                    existing_player.colour
+                                                    )
 
-                    player_list = update_player_list(new_player, player_list)
+                if new_player.name == my_player.name:
+                    my_player = new_player
+                player_list = update_player_list(new_player, player_list)
 
-    my_player.update(client_actions, dt)
+    for player in player_list:
+        if player == my_player:
+            player.update(client_actions, dt) # predict and interpolate for smoothness
+        else:
+            player.update(ACTIONS ,dt)
+
     player_list = update_player_list(my_player, player_list)
 
     # Draw everything
     screen.fill((0, 0, 0))
     for player in player_list:
-        pg.draw.rect(screen, (255, 255, 255), player.draw())
+        pg.draw.rect(screen, player.colour, player.draw())
 
     dt = clock.tick(FRAMERATE)
     pg.display.update()
