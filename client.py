@@ -4,6 +4,7 @@ from player import Player
 from network import *
 from constant import *
 from level import *
+from powerup import *
 import random
 
 SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
@@ -30,6 +31,7 @@ if not colour:
 else:
     colour = decode_rgb(colour)
 
+powerups = []
 my_player = Player(32, 32, username)
 my_player.colour = colour
 message = encode_player_data(my_player, True)
@@ -109,6 +111,19 @@ while not game_over:
                 if new_player.name == my_player.name:
                     my_player = new_player
                 player_list = update_player_list(new_player, player_list)
+                
+            if msg[0] == HEAD_POWERINFO:
+                powerups = []
+                for po in msg[1:]:
+                    for att in po:
+                        if att[0] == "x":
+                            x = int(att[1:])
+                        if att[0] == "y":
+                            y = int(att[1:])
+                        if att[0] == "t":
+                            typ = int(att[1:])
+                    powerups.append(Powerup(x, y, typ))
+                        
 
     for player in player_list:
         if player == my_player:
@@ -124,5 +139,7 @@ while not game_over:
         pg.draw.rect(screen, player.colour, player.draw())
     for wall in lvl0:
         pg.draw.rect(screen, (255, 255, 255), [wall[0], wall[1], 32, 32])
+    for po in powerups:
+        pg.draw.rect(screen, (0, 255, 255), po.draw())
     dt = clock.tick(FRAMERATE)
     pg.display.update()
