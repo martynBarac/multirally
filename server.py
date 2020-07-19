@@ -81,7 +81,7 @@ while True:
 
 clock = pg.time.Clock()
 game_over = False
-powerups = [[50, 500, POWERUP_HEALTH]]
+powerups = [[50, 300, POWERUP_HEALTH]]
 print(len(maybe_readable))
 while not game_over:
     readable, writeable, exception = select.select(maybe_readable, maybe_writeable, maybe_readable)

@@ -123,6 +123,7 @@ while not game_over:
                     if att[0] == "t":
                         typ = int(att[1:])
                 powerups.append(Powerup(x, y, typ))
+                
                         
 
     for player in player_list:
@@ -140,6 +141,7 @@ while not game_over:
     for wall in lvl0:
         pg.draw.rect(screen, (255, 255, 255), [wall[0], wall[1], 32, 32])
     for po in powerups:
+        print(po.rect)
         pg.draw.rect(screen, (0, 255, 255), po.draw())
     dt = clock.tick(FRAMERATE)
     pg.display.update()

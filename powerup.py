@@ -1,7 +1,7 @@
 import pygame as pg
 
 class Powerup:
-    def __init__(self, x, y, typ):
+    def __init__(self, x=50, y=50, typ=0):
         self.xpos = x
         self.ypos = y
         self.type = typ
