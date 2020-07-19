@@ -81,6 +81,7 @@ while True:
 
 clock = pg.time.Clock()
 game_over = False
+powerups = [[50, 500, POWERUP_HEALTH]]
 print(len(maybe_readable))
 while not game_over:
     readable, writeable, exception = select.select(maybe_readable, maybe_writeable, maybe_readable)
@@ -105,6 +106,16 @@ while not game_over:
             msg = encode_player_data(pl)
             msg = list_to_bytes(msg)
             s.send(msg)
+            
+            # Send powerup data (probably wrong and yucky)
+            powmsg = [HEAD_POWERINFO]
+            for po in powerups:
+				x = "x"+str(po[0])
+				y = "y"+str(po[1])
+				typ = "t"+str(po[2])
+				powmsg.append([x, y, typ])
+			powmsg = list_to_bytes(powmsg)
+			s.send(powmsg)
 
     dt = TICKRATE
     time.sleep(1/TICKRATE)
