@@ -21,7 +21,7 @@ class Player:
         self.xacc = 0
         self.yacc = 0
         self.health = 100
-        self.topSpeed = 1
+        self.topSpeed = 0.7
         self.colour = (255, 255, 255)
 
     def update(self, actions, dt):
@@ -64,20 +64,61 @@ class Player:
         self.ypos += self.yvel*dt
         
         #COLLISION
-        if self.check_col():
-            mag = sqrt(self.xvel**2 + self.yvel**2)
-            dirx = self.xvel / mag
-            diry = self.yvel / mag
-            while self.check_col():
-                self.xpos -= dirx
-                self.ypos -= diry
-    
-    def check_col(self):
-        for wall in lvl0:
-            if not self.xpos > wall[0] + 16 and not self.xpos + self.w < wall[0]:
-                if not self.ypos > wall[1] + 16 and not self.ypos + self.w < wall[1]:
-                    return wall
+        walls = self.check_wall_col(False, self.xpos, self.ypos)
+        
+        if walls: #Check if it hit anything
+            for col in walls: #Loop through every wall it hit
+                #Right side of block
+                if self.xvel < 0:
+                    if self.check_wall_col(col) and not self.check_wall_col(col, self.xpos - self.xvel*dt, self.ypos):
+                        print("Right")
+                        self.xpos = col[0] + 32
+                        self.xvel = 0
+                #Left side of block
+                elif self.xvel > 0:
+                    if self.check_wall_col(col) and not self.check_wall_col(col, self.xpos - self.xvel*dt, self.ypos):
+                        print("Left")
+                        self.xpos = col[0] - self.w
+                        self.xvel = 0
+                #Bottom side of block
+                if self.yvel < 0:
+                    if self.check_wall_col(col) and not self.check_wall_col(col, self.xpos, self.ypos - self.yvel*dt):
+                        print("Bottom")
+                        self.ypos = col[1] + 32
+                        self.yvel = 0
+                #Top side of block
+                elif self.yvel > 0:
+                    if self.check_wall_col(col) and not self.check_wall_col(col, self.xpos, self.ypos - self.yvel*dt):
+                        print("Top")
+                        self.ypos = col[1] - self.h
+                        self.yvel = 0
+                
+    def rect_col(self, rect1, rect2):
+        if not rect1[0] >= rect2[0] + rect2[2] and not rect1[0] + rect1[2] <= rect2[0]: # not to the right and not to the left
+            if not rect1[1] >= rect2[1] + rect2[3] and not rect1[1] + rect1[3] <= rect2[1]: # not below and not above
+                return True
         return False
+    
+    def check_wall_col(self, wall=False, x=False, y=False):
+        #If wall is set it will only check collisions with that specific wall, otherwise it checks all walls
+        if x == False:
+            x = self.xpos
+        if y == False:
+            y = self.ypos
+        walls = []
+        if wall:
+            if self.rect_col([x, y, self.w, self.h], [wall[0], wall[1], 32, 32]):
+                print("yeah")
+                return True
+            return False
+        else:
+            for wall in lvl0:
+                if self.rect_col([x, y, self.w, self.h], [wall[0], wall[1], 32, 32]):
+                    walls.append(wall)
+        if walls:
+            return walls
+        return False
+        
     def draw(self):
         rectangle = pg.Rect(self.xpos, self.ypos, 16, 16)
         return rectangle
