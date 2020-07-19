@@ -71,25 +71,21 @@ class Player:
                 #Right side of block
                 if self.xvel < 0:
                     if self.check_wall_col(col) and not self.check_wall_col(col, self.xpos - self.xvel*dt, self.ypos):
-                        print("Right")
                         self.xpos = col[0] + 32
                         self.xvel = 0
                 #Left side of block
                 elif self.xvel > 0:
                     if self.check_wall_col(col) and not self.check_wall_col(col, self.xpos - self.xvel*dt, self.ypos):
-                        print("Left")
                         self.xpos = col[0] - self.w
                         self.xvel = 0
                 #Bottom side of block
                 if self.yvel < 0:
                     if self.check_wall_col(col) and not self.check_wall_col(col, self.xpos, self.ypos - self.yvel*dt):
-                        print("Bottom")
                         self.ypos = col[1] + 32
                         self.yvel = 0
                 #Top side of block
                 elif self.yvel > 0:
                     if self.check_wall_col(col) and not self.check_wall_col(col, self.xpos, self.ypos - self.yvel*dt):
-                        print("Top")
                         self.ypos = col[1] - self.h
                         self.yvel = 0
                 
@@ -108,7 +104,6 @@ class Player:
         walls = []
         if wall:
             if self.rect_col([x, y, self.w, self.h], [wall[0], wall[1], 32, 32]):
-                print("yeah")
                 return True
             return False
         else:
