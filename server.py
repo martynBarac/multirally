@@ -110,12 +110,15 @@ while not game_over:
             # Send powerup data (probably wrong and yucky)
             powmsg = [HEAD_POWERINFO]
             for po in powerups:
-				x = "x"+str(po[0])
-				y = "y"+str(po[1])
-				typ = "t"+str(po[2])
-				powmsg.append([x, y, typ])
-			powmsg = list_to_bytes(powmsg)
-			s.send(powmsg)
+                x = "x"+str(po[0])
+                y = "y"+str(po[1])
+                typ = "t"+str(po[2])
+                powmsg.append(x)
+                powmsg.append(y)
+                powmsg.append(typ)
+                
+            powmsg = list_to_bytes(powmsg)
+            s.send(powmsg)
 
     dt = TICKRATE
     time.sleep(1/TICKRATE)

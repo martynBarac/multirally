@@ -114,15 +114,15 @@ while not game_over:
                 
             if msg[0] == HEAD_POWERINFO:
                 powerups = []
-                for po in msg[1:]:
-                    for att in po:
-                        if att[0] == "x":
-                            x = int(att[1:])
-                        if att[0] == "y":
-                            y = int(att[1:])
-                        if att[0] == "t":
-                            typ = int(att[1:])
-                    powerups.append(Powerup(x, y, typ))
+                for att in msg[1:]:
+                    
+                    if att[0] == "x":
+                        x = int(att[1:])
+                    if att[0] == "y":
+                        y = int(att[1:])
+                    if att[0] == "t":
+                        typ = int(att[1:])
+                powerups.append(Powerup(x, y, typ))
                         
 
     for player in player_list:
