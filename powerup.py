@@ -7,5 +7,8 @@ class Powerup:
         self.type = typ
         self.rect = pg.Rect(x, y, 8, 8)
         
-    def draw(self):
-        return self.rect
+    def draw(self, camx, camy):
+        return_rect = self.rect.copy()
+        return_rect.x = self.rect.x - camx
+        return_rect.y = self.rect.y - camy
+        return return_rect

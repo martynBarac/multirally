@@ -9,7 +9,7 @@ import pygame as pg
 
 print("Initialising")
 
-my_server = Network("192.168.0.22", 27014)
+my_server = Network("192.168.0.20", 27014)
 my_server.sock.setblocking(0)
 my_server.sock.bind((my_server.IP, my_server.PORT))
 

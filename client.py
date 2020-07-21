@@ -124,7 +124,7 @@ while not game_over:
     for wall in lvl0:
         pg.draw.rect(screen, (255, 255, 255), [wall[0]-camera_pos[0], wall[1]-camera_pos[1], 32, 32])
     for po in powerups:
-        pg.draw.rect(screen, (0, 255, 255), po.draw())
+        pg.draw.rect(screen, (0, 255, 255), po.draw(camera_pos[0], camera_pos[1]))
         
     dt = clock.tick(FRAMERATE)
     pg.display.update()
