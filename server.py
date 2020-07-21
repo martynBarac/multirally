@@ -22,6 +22,7 @@ maybe_readable = [my_server.sock]
 maybe_writeable = []
 sent_times = 0
 dt = 0
+powerups = [Powerup(50, 300, POWERUP_HEALTH), Powerup(100, 250, POWERUP_HEALTH)]
 
 while True:
     readable, writeable, exception = select.select(maybe_readable, maybe_writeable, maybe_readable)
@@ -82,7 +83,7 @@ while True:
 
 clock = pg.time.Clock()
 game_over = False
-powerups = [Powerup(50, 300, POWERUP_HEALTH)]
+
 print(len(maybe_readable))
 while not game_over:
     readable, writeable, exception = select.select(maybe_readable, maybe_writeable, maybe_readable)
@@ -108,8 +109,8 @@ while not game_over:
             msg = list_to_bytes(msg)
             s.send(msg)
             
-            # Send powerup data (probably wrong and yucky)
-            powmsg = encode_powerup_data()
+            # Send powerup data
+            powmsg = encode_powerup_data(powerups)
             s.send(powmsg)
 
     dt = TICKRATE

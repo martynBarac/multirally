@@ -113,7 +113,7 @@ while not game_over:
                 player_list = update_player_list(new_player, player_list)
                 
             if msg[0] == HEAD_POWERINFO:
-                powerups = decode_powerup_data()
+                powerups = decode_powerup_data(msg)
                 
                         
 

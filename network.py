@@ -1,6 +1,7 @@
 import socket
 import random
 from player import Player
+from powerup import Powerup
 
 BUFFERSIZE = 500
 

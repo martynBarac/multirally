@@ -94,11 +94,13 @@ class Player:
         return self.powerup_col(powerups)
    
     def powerup_col(self, powerups):
-        for i in range(len(powerups)):
+        i = 0
+        while i < len(powerups):
             if self.rect_col([self.xpos, self.ypos, self.w, self.h], powerups[i].rect):
                 if powerups[i].type == POWERUP_HEALTH:
                     self.health += POWERUP_HEALTH_AMT
                 powerups.pop(i)
+            i += 1
         return powerups
                 
     def rect_col(self, rect1, rect2):
