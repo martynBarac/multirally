@@ -114,15 +114,21 @@ while not game_over:
                 
             if msg[0] == HEAD_POWERINFO:
                 powerups = []
+                powdict = {} # A single item will look like id:[x, y, type]
+                
                 for att in msg[1:]:
-                    
-                    if att[0] == "x":
-                        x = int(att[1:])
-                    if att[0] == "y":
-                        y = int(att[1:])
-                    if att[0] == "t":
-                        typ = int(att[1:])
-                powerups.append(Powerup(x, y, typ))
+                    att = att.split(":")
+                    print(att)
+                    idd = att[0] # an id is used for each attribute so the order of the list doesnt matter
+                    powdict.setdefault(idd, [0, 0, 0])
+                    if att[1][0] == "x":
+                        powdict[idd][0] = int(att[1][1:])
+                    if att[1][0] == "y":
+                        powdict[idd][1] = int(att[1][1:])
+                    if att[1][0] == "t":
+                        powdict[idd][2] = int(att[1][1:])
+                for po in powdict.values():
+                    powerups.append(Powerup(po[0], po[1], po[2]))
                 
                         
 
@@ -141,7 +147,6 @@ while not game_over:
     for wall in lvl0:
         pg.draw.rect(screen, (255, 255, 255), [wall[0], wall[1], 32, 32])
     for po in powerups:
-        print(po.rect)
         pg.draw.rect(screen, (0, 255, 255), po.draw())
     dt = clock.tick(FRAMERATE)
     pg.display.update()
