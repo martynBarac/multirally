@@ -1,5 +1,6 @@
 import pygame as pg
 import time
+import math
 from player import Player
 from network import *
 from constant import *
@@ -11,7 +12,7 @@ SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 
 addr = input("Enter server address: ")
 if not addr:
-    addr = "192.168.0.25"
+    addr = "192.168.0.20"
 
 addr = addr.split(":")
 if len(addr) > 1:
@@ -31,8 +32,9 @@ if not colour:
 else:
     colour = decode_rgb(colour)
 
+
 powerups = []
-my_player = Player(32, 32, username)
+my_player = Player(32, 32, 0,username)
 my_player.colour = colour
 message = encode_player_data(my_player, True)
 my_client.send_msg_list(message)
@@ -45,18 +47,10 @@ while True:
     if msg:
         if len(msg) > 0:
             if msg[0] == HEAD_PINFO:
-                new_player = decode_player_data(msg, "ERR", 32, 32, 0, 0, 100, (255, 255, 255))
+                new_player = return_error_player(msg)
                 existing_player = find_player_from_name(new_player.name, player_list)
                 if existing_player:
-                    new_player = decode_player_data(msg,
-                                                    existing_player.name,
-                                                    existing_player.xpos,
-                                                    existing_player.ypos,
-                                                    existing_player.xvel,
-                                                    existing_player.yvel,
-                                                    existing_player.health,
-                                                    existing_player.colour
-                                                    )
+                    new_player = update_existing_player(msg, existing_player)
                 player_list = update_player_list(new_player, player_list)
 
             if msg[0] == "START":
@@ -93,20 +87,11 @@ while not game_over:
     msg = my_client.recv_msg_list()
     if msg:
         if len(msg) > 0:
-            print(msg)
             if msg[0] == HEAD_PINFO:
-                new_player = decode_player_data(msg, "ERR", 32, 32, 0, 0, 100, (255, 255, 255))
+                new_player = return_error_player(msg)
                 existing_player = find_player_from_name(new_player.name, player_list)
                 if existing_player:
-                    new_player = decode_player_data(msg,
-                                                    existing_player.name,
-                                                    existing_player.xpos,
-                                                    existing_player.ypos,
-                                                    existing_player.xvel,
-                                                    existing_player.yvel,
-                                                    existing_player.health,
-                                                    existing_player.colour
-                                                    )
+                    new_player = update_existing_player(msg, existing_player)
 
                 if new_player.name == my_player.name:
                     my_player = new_player
@@ -126,12 +111,20 @@ while not game_over:
     player_list = update_player_list(my_player, player_list)
 
     # Draw everything
+    camera_pos = (my_player.xpos-SCREEN_WIDTH/2, my_player.ypos-SCREEN_HEIGHT/2)
     screen.fill((0, 0, 0))
     for player in player_list:
-        pg.draw.rect(screen, player.colour, player.draw())
+        color_image = pg.Surface(player.image.get_size())
+        color_image.fill(player.colour)
+        draw_image = pg.transform.rotate(player.image, math.degrees(player.angle))
+        draw_image.set_colorkey((255, 0, 255))
+        draw_image.blit(color_image, (0, 0), special_flags=pg.BLEND_RGBA_MULT)
+        screen.blit(draw_image, (player.xpos-camera_pos[0], player.ypos-camera_pos[1]))
+
     for wall in lvl0:
-        pg.draw.rect(screen, (255, 255, 255), [wall[0], wall[1], 32, 32])
+        pg.draw.rect(screen, (255, 255, 255), [wall[0]-camera_pos[0], wall[1]-camera_pos[1], 32, 32])
     for po in powerups:
         pg.draw.rect(screen, (0, 255, 255), po.draw())
+        
     dt = clock.tick(FRAMERATE)
     pg.display.update()

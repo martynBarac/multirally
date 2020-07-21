@@ -8,6 +8,7 @@ import select
 import pygame as pg
 
 print("Initialising")
+
 my_server = Network("192.168.0.22", 27014)
 my_server.sock.setblocking(0)
 my_server.sock.bind((my_server.IP, my_server.PORT))
@@ -46,16 +47,9 @@ while True:
                 if msg[0] == HEAD_PINFO:
                     if addr in client_dict:
                         client_dict[addr][1] = existing_player
-                        new_player = decode_player_data(msg, existing_player.name,
-                                                        existing_player.xpos,
-                                                        existing_player.ypos,
-                                                        existing_player.xvel,
-                                                        existing_player.yvel,
-                                                        existing_player.health,
-                                                        existing_player.colour
-                                                        )
+                        new_player = update_existing_player(msg, existing_player)
                     else:
-                        new_player = decode_player_data(msg, "ERR", 32, 32, 0, 0, 100, (255, 255, 255))
+                        new_player = return_error_player(msg)
 
                     player_list = update_player_list(new_player, player_list)
                     username = new_player.name
@@ -69,7 +63,7 @@ while True:
             print("STARTING GAME!!")
             s.send(b"START:")
         sent_times += 1
-        if sent_times > BUFFERSIZE//6:
+        if sent_times > 30:
             break
 
     for s in writeable:
