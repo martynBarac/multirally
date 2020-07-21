@@ -113,22 +113,7 @@ while not game_over:
                 player_list = update_player_list(new_player, player_list)
                 
             if msg[0] == HEAD_POWERINFO:
-                powerups = []
-                powdict = {} # A single item will look like id:[x, y, type]
-                
-                for att in msg[1:]:
-                    att = att.split("/")
-                    print(att)
-                    idd = att[0] # an id is used for each attribute so the order of the list doesnt matter
-                    powdict.setdefault(idd, [0, 0, 0])
-                    if att[1][0] == "x":
-                        powdict[idd][0] = int(att[1][1:])
-                    if att[1][0] == "y":
-                        powdict[idd][1] = int(att[1][1:])
-                    if att[1][0] == "t":
-                        powdict[idd][2] = int(att[1][1:])
-                for po in powdict.values():
-                    powerups.append(Powerup(po[0], po[1], po[2]))
+                powerups = decode_powerup_data()
                 
                         
 

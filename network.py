@@ -117,6 +117,36 @@ def encode_player_data(pl, send_colour = False):
     _bytes = attributes
     return _bytes
 
+def encode_powerup_data(powerups):
+    powmsg = [HEAD_POWERINFO]
+    for i in range(len(powerups)):
+        x = str(i)+"/x"+str(powerups[i].xpos)
+        y = str(i)+"/y"+str(powerups[i].ypos)
+        typ = str(i)+"/t"+str(powerups[i].type)
+        powmsg.append(x)
+        powmsg.append(y)
+        powmsg.append(typ)
+        
+    return list_to_bytes(powmsg)
+        
+def decode_powerup_data(msg):
+    decoded = []
+    powdict = {} # A single item will look like id:[x, y, type]
+    
+    for att in msg[1:]:
+        att = att.split("/")
+        idd = att[0] # an id is used for each attribute so the order of the list doesnt matter
+        powdict.setdefault(idd, [0, 0, 0])
+        if att[1][0] == "x":
+            powdict[idd][0] = int(att[1][1:])
+        if att[1][0] == "y":
+            powdict[idd][1] = int(att[1][1:])
+        if att[1][0] == "t":
+            powdict[idd][2] = int(att[1][1:])
+    for po in powdict.values():
+        decoded.append(Powerup(po[0], po[1], po[2]))
+        
+    return decoded
 
 def encode_action_data(actions):
     """

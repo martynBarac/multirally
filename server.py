@@ -109,16 +109,7 @@ while not game_over:
             s.send(msg)
             
             # Send powerup data (probably wrong and yucky)
-            powmsg = [HEAD_POWERINFO]
-            for i in range(len(powerups)):
-                x = str(i)+"/x"+str(powerups[i].xpos)
-                y = str(i)+"/y"+str(powerups[i].ypos)
-                typ = str(i)+"/t"+str(powerups[i].type)
-                powmsg.append(x)
-                powmsg.append(y)
-                powmsg.append(typ)
-                
-            powmsg = list_to_bytes(powmsg)
+            powmsg = encode_powerup_data()
             s.send(powmsg)
 
     dt = TICKRATE

@@ -1,6 +1,7 @@
 import pygame as pg
 from level import *
 from math import *
+from constant import *
 
 UPARROW = 1
 LEFTARROW = 2
@@ -95,6 +96,8 @@ class Player:
     def powerup_col(self, powerups):
         for i in range(len(powerups)):
             if self.rect_col([self.xpos, self.ypos, self.w, self.h], powerups[i].rect):
+                if powerups[i].type == POWERUP_HEALTH:
+                    self.health += POWERUP_HEALTH_AMT
                 powerups.pop(i)
         return powerups
                 
