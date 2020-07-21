@@ -60,7 +60,7 @@ while True:
             print("STARTING GAME!!")
             s.send(b"START:")
         sent_times += 1
-        if sent_times > 5:
+        if sent_times > 30:
             break
 
     for s in writeable:

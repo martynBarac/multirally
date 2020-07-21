@@ -77,6 +77,7 @@ def decode_player_data(player, name, angle, xpos, ypos, xvel, yvel, health, colo
 
     for i in range(1, len(attributes), 1):
         head = attributes[i][0]
+        updated_colour = False
         if head == 'n':
             name = attributes[i][1:]
         elif head == 'x':

@@ -29,10 +29,6 @@ class Player:
         self.colour = (255, 255, 255)
         self.image = pg.image.load("sprites/car.png")
 
-        color_image = pg.Surface(self.image.get_size())
-        color_image.fill(self.colour)
-        self.image.blit(color_image, (0, 0), special_flags=pg.BLEND_RGBA_MULT)
-
     def update(self, actions, dt):
         # Do actions
         throttle = 0
@@ -81,8 +77,8 @@ class Player:
         self.xpos = round(self.xpos, 10)
         self.ypos = round(self.ypos, 10)
 
-        self.xpos = self.xpos%640
-        self.ypos = self.ypos%480
+        #self.xpos = self.xpos%150000
+        #self.ypos = self.ypos%150000
 
         #COLLISION
         walls = self.check_wall_col(False, self.xpos, self.ypos)
@@ -107,7 +103,7 @@ class Player:
                         print("Bottom")
                         self.ypos = col[1] + 32
                         self.yvel = 0
-                #Top side of block
+                # Top side of block
                 elif self.yvel > 0:
                     if self.check_wall_col(col) and not self.check_wall_col(col, self.xpos, self.ypos - self.yvel*dt):
                         print("Top")
@@ -120,7 +116,7 @@ class Player:
         return False
     
     def check_wall_col(self, wall=False, x=False, y=False):
-        #If wall is set it will only check collisions with that specific wall, otherwise it checks all walls
+        # If wall is set it will only check collisions with that specific wall, otherwise it checks all walls
         if x == False:
             x = self.xpos
         if y == False:

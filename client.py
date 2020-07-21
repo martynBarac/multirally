@@ -103,10 +103,17 @@ while not game_over:
     player_list = update_player_list(my_player, player_list)
 
     # Draw everything
+    camera_pos = (my_player.xpos-SCREEN_WIDTH/2, my_player.ypos-SCREEN_HEIGHT/2)
     screen.fill((0, 0, 0))
     for player in player_list:
-        screen.blit(pg.transform.rotate(player.image, math.degrees(player.angle)), (player.xpos, player.ypos))
+        color_image = pg.Surface(player.image.get_size())
+        color_image.fill(player.colour)
+        draw_image = pg.transform.rotate(player.image, math.degrees(player.angle))
+        draw_image.set_colorkey((255, 0, 255))
+        draw_image.blit(color_image, (0, 0), special_flags=pg.BLEND_RGBA_MULT)
+        screen.blit(draw_image, (player.xpos-camera_pos[0], player.ypos-camera_pos[1]))
+
     for wall in lvl0:
-        pg.draw.rect(screen, (255, 255, 255), [wall[0], wall[1], 32, 32])
+        pg.draw.rect(screen, (255, 255, 255), [wall[0]-camera_pos[0], wall[1]-camera_pos[1], 32, 32])
     dt = clock.tick(FRAMERATE)
     pg.display.update()
