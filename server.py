@@ -77,6 +77,9 @@ while True:
             msg = encode_player_data(pl, True)
             msg = list_to_bytes(msg)
             s.send(msg)
+            if len(powerups) > 0:
+                powmsg = encode_powerup_data(powerups)
+                s.send(powmsg)
 
     time.sleep(0.1)
 
