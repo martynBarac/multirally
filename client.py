@@ -37,7 +37,7 @@ my_player.colour = colour
 message = encode_player_data(my_player, True)
 my_client.send_msg_list(message)
 
-
+powerups = []
 player_list = []
 client_dict = {}
 while True:
@@ -134,9 +134,9 @@ while not game_over:
 
     for player in player_list:
         if player == my_player:
-            player.update(client_actions, dt) # predict and interpolate for smoothness
+            player.update(client_actions, dt, powerups) # predict and interpolate for smoothness
         else:
-            player.update(ACTIONS ,dt)
+            player.update(ACTIONS ,dt, powerups)
 
     player_list = update_player_list(my_player, player_list)
 

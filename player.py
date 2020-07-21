@@ -24,7 +24,7 @@ class Player:
         self.topSpeed = 0.7
         self.colour = (255, 255, 255)
 
-    def update(self, actions, dt):
+    def update(self, actions, dt, powerups):
         # Do actions
         if actions[UPARROW]:
             self.yvel = -self.topSpeed
@@ -88,6 +88,15 @@ class Player:
                     if self.check_wall_col(col) and not self.check_wall_col(col, self.xpos, self.ypos - self.yvel*dt):
                         self.ypos = col[1] - self.h
                         self.yvel = 0
+       
+        #POWERUP COLLISION
+        return self.powerup_col(powerups)
+   
+    def powerup_col(self, powerups):
+        for i in range(len(powerups)):
+            if self.rect_col([self.xpos, self.ypos, self.w, self.h], powerups[i].rect):
+                powerups.pop(i)
+        return powerups
                 
     def rect_col(self, rect1, rect2):
         if not rect1[0] >= rect2[0] + rect2[2] and not rect1[0] + rect1[2] <= rect2[0]: # not to the right and not to the left
