@@ -2,18 +2,20 @@
 import time
 from network import *
 from constant import *
+from powerup import *
 import random
 import select
 import pygame as pg
 
 print("Initialising")
-my_server = Network("192.168.0.20", 27014)
+
+my_server = Network("192.168.0.22", 27014)
 my_server.sock.setblocking(0)
 my_server.sock.bind((my_server.IP, my_server.PORT))
 
 player_list = []
 client_dict = {} # Client dict client_address:[username, Player, inputs]
-MAXPLAYERS = 2
+MAXPLAYERS = 1
 
 my_server.sock.listen(MAXPLAYERS)
 
@@ -21,6 +23,7 @@ maybe_readable = [my_server.sock]
 maybe_writeable = []
 sent_times = 0
 dt = 0
+powerups = [Powerup(50, 300, POWERUP_HEALTH), Powerup(100, 250, POWERUP_HEALTH)]
 
 while True:
     readable, writeable, exception = select.select(maybe_readable, maybe_writeable, maybe_readable)
@@ -68,12 +71,16 @@ while True:
             msg = encode_player_data(pl, True)
             msg = list_to_bytes(msg)
             s.send(msg)
+            if len(powerups) > 0:
+                powmsg = encode_powerup_data(powerups)
+                s.send(powmsg)
 
     time.sleep(0.1)
 
 
 clock = pg.time.Clock()
 game_over = False
+
 print(len(maybe_readable))
 while not game_over:
     readable, writeable, exception = select.select(maybe_readable, maybe_writeable, maybe_readable)
@@ -90,7 +97,7 @@ while not game_over:
     for client_addr in client_dict:
         new_player = client_dict[client_addr][1]
         player_actions = client_dict[client_addr][2]
-        new_player.update(player_actions, dt)
+        new_player.update(player_actions, dt, powerups)
 
     for s in writeable:
         for client_addr in client_dict:
@@ -98,6 +105,10 @@ while not game_over:
             msg = encode_player_data(pl)
             msg = list_to_bytes(msg)
             s.send(msg)
+            
+            # Send powerup data
+            powmsg = encode_powerup_data(powerups)
+            s.send(powmsg)
 
     dt = TICKRATE
     time.sleep(1/TICKRATE)
