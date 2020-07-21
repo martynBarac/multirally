@@ -57,10 +57,11 @@ class Network:
         self.sock.close()
 
 
-def decode_player_data(player, name, xpos, ypos, xvel, yvel, health, colour):
+def decode_player_data(player, name, angle, xpos, ypos, xvel, yvel, health, colour):
     """
     :param name: The default name
     :param player: The encoded player data
+    :param angle: angle
     :param xpos: The default xposition if position data was not recieved
     :param ypos: The default yposition if position data was not recieved
     :param health: The default health if health data was not recieved
@@ -90,8 +91,10 @@ def decode_player_data(player, name, xpos, ypos, xvel, yvel, health, colour):
             health = int(attributes[i][1:])
         elif head == 'c':
             colour = decode_rgb(attributes[i][1:])
+        elif head == 'a':
+            angle = float(attributes[i][1:])
 
-    pl = Player(xpos, ypos, name)
+    pl = Player(xpos, ypos, angle, name)
     pl.health = health
     pl.colour = colour
     pl.xvel = xvel
@@ -109,12 +112,31 @@ def encode_player_data(pl, send_colour = False):
     xvel = 'X'+str(pl.xvel)
     yvel = 'Y'+str(pl.yvel)
     health = 'h'+str(pl.health)
-    attributes = [HEAD_PINFO, name, xpos, ypos, xvel, yvel, health]
+    angle = 'a'+str(pl.angle)
+    attributes = [HEAD_PINFO, name, xpos, ypos, angle, xvel, yvel, health]
     if send_colour:
         colour = 'c'+encode_rgb(pl.colour)
         attributes.append(colour)
     _bytes = attributes
     return _bytes
+
+
+def update_existing_player(new_player_data, existing_player):
+    new_player = decode_player_data(new_player_data,
+                                    existing_player.name,
+                                    existing_player.xpos,
+                                    existing_player.ypos,
+                                    existing_player.angle,
+                                    existing_player.xvel,
+                                    existing_player.yvel,
+                                    existing_player.health,
+                                    existing_player.colour
+                                    )
+    return new_player
+
+
+def return_error_player(msg):
+    return decode_player_data(msg, "ERR", 32, 32, 0, 0, 0, 100, (255, 255, 255))
 
 
 def encode_action_data(actions):

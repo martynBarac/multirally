@@ -1,6 +1,6 @@
 import pygame as pg
 from level import *
-from math import *
+import math
 
 UPARROW = 1
 LEFTARROW = 2
@@ -9,60 +9,81 @@ DOWNARROW = 4
 
 
 class Player:
-    def __init__(self, x, y, name):
+    def __init__(self, x, y, angle, name):
         self.name = name
-        self.id = -1
         self.xpos = x
         self.ypos = y
         self.w = 16
         self.h = 16
         self.xvel = 0
         self.yvel = 0
+
         self.xacc = 0
         self.yacc = 0
+
+        self.angle = angle
+
         self.health = 100
         self.topSpeed = 0.7
+        self.engine_power = 0.001
         self.colour = (255, 255, 255)
+        self.image = pg.image.load("sprites/car.png")
+
+        color_image = pg.Surface(self.image.get_size())
+        color_image.fill(self.colour)
+        self.image.blit(color_image, (0, 0), special_flags=pg.BLEND_RGBA_MULT)
 
     def update(self, actions, dt):
         # Do actions
+        throttle = 0
         if actions[UPARROW]:
-            self.yvel = -self.topSpeed
+            throttle = self.engine_power
         if actions[DOWNARROW]:
-            self.yvel = self.topSpeed
+            throttle = -self.engine_power/2
         if actions[LEFTARROW]:
-            self.xvel = -self.topSpeed
+            self.angle += 0.1
         if actions[RIGHTARROW]:
-            self.xvel = self.topSpeed
+            self.angle -= 0.1
 
-        if self.xvel > 0:
-            self.xacc = -0.01
-        elif self.xvel < 0:
-            self.xacc = 0.01
-        else:
-            self.xacc = 0
+        maxfric = 0.005
 
-        if self.yvel > 0:
-            self.yacc = -0.01
-        elif self.yvel < 0:
-            self.yacc = 0.01
+        self.angle = self.angle % (2 * math.pi)
+        self.angle = round(self.angle, 10)
+
+        speed = math.sqrt(self.xvel**2 + self.yvel**2)
+        direction = math.atan2(self.yvel, self.xvel)
+
+        fric = speed*0.00001
+        centripmax = 0.001
+        centripForce = -math.sin(self.angle+direction) * centripmax
+        print("dir:", math.degrees(direction))
+        print("ang:", math.degrees(self.angle))
+
+        if self.yvel < 0:
+            fcx = centripForce * math.sin(self.angle)
+            fcy = -centripForce * math.cos(self.angle)
         else:
-            self.yacc = 0
+            fcx = centripForce * math.sin(self.angle)
+            fcy = -centripForce * math.cos(self.angle)
+
+        self.xacc = - fric*math.cos(self.angle) + throttle*math.cos(self.angle) + fcx
+        self.yacc = fric*math.sin(self.angle) - throttle*math.sin(self.angle) - fcy
 
         self.xvel += self.xacc*dt
         self.yvel += self.yacc*dt
 
-        self.xvel = round(self.xvel, 3)
-        self.yvel = round(self.yvel, 3)
-
-        if 0.2 > self.xvel > -0.2:
-            self.xvel = 0
-        if 0.2 > self.yvel > -0.2:
-            self.yvel = 0
+        self.xvel = round(self.xvel, 10)
+        self.yvel = round(self.yvel, 10)
 
         self.xpos += self.xvel*dt
         self.ypos += self.yvel*dt
-        
+
+        self.xpos = round(self.xpos, 10)
+        self.ypos = round(self.ypos, 10)
+
+        self.xpos = self.xpos%640
+        self.ypos = self.ypos%480
+
         #COLLISION
         walls = self.check_wall_col(False, self.xpos, self.ypos)
         
@@ -91,8 +112,7 @@ class Player:
                     if self.check_wall_col(col) and not self.check_wall_col(col, self.xpos, self.ypos - self.yvel*dt):
                         print("Top")
                         self.ypos = col[1] - self.h
-                        self.yvel = 0
-                
+
     def rect_col(self, rect1, rect2):
         if not rect1[0] >= rect2[0] + rect2[2] and not rect1[0] + rect1[2] <= rect2[0]: # not to the right and not to the left
             if not rect1[1] >= rect2[1] + rect2[3] and not rect1[1] + rect1[3] <= rect2[1]: # not below and not above
