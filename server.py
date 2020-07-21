@@ -81,7 +81,7 @@ while True:
 
 clock = pg.time.Clock()
 game_over = False
-powerups = [[50, 300, POWERUP_HEALTH], [60, 300, POWERUP_HEALTH], [60, 250, POWERUP_HEALTH],[30, 300, POWERUP_HEALTH],[60, 540, POWERUP_HEALTH],[80, 300, POWERUP_HEALTH],[100, 300, POWERUP_HEALTH],[110, 300, POWERUP_HEALTH],[130, 300, POWERUP_HEALTH],[150, 300, POWERUP_HEALTH],]
+powerups = [[50, 300, POWERUP_HEALTH], [60, 300, POWERUP_HEALTH], [60, 250, POWERUP_HEALTH],[30, 300, POWERUP_HEALTH],[60, 310, POWERUP_HEALTH],[80, 300, POWERUP_HEALTH],[100, 300, POWERUP_HEALTH],[110, 300, POWERUP_HEALTH],[130, 300, POWERUP_HEALTH],[150, 300, POWERUP_HEALTH],[150, 290, POWERUP_HEALTH], [150, 280, POWERUP_HEALTH]]
 print(len(maybe_readable))
 while not game_over:
     readable, writeable, exception = select.select(maybe_readable, maybe_writeable, maybe_readable)
@@ -110,9 +110,9 @@ while not game_over:
             # Send powerup data (probably wrong and yucky)
             powmsg = [HEAD_POWERINFO]
             for i in range(len(powerups)):
-                x = str(i)+":x"+str(powerups[i][0])
-                y = str(i)+":y"+str(powerups[i][1])
-                typ = str(i)+":t"+str(powerups[i][2])
+                x = str(i)+"/x"+str(powerups[i][0])
+                y = str(i)+"/y"+str(powerups[i][1])
+                typ = str(i)+"/t"+str(powerups[i][2])
                 powmsg.append(x)
                 powmsg.append(y)
                 powmsg.append(typ)

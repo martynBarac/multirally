@@ -117,7 +117,7 @@ while not game_over:
                 powdict = {} # A single item will look like id:[x, y, type]
                 
                 for att in msg[1:]:
-                    att = att.split(":")
+                    att = att.split("/")
                     print(att)
                     idd = att[0] # an id is used for each attribute so the order of the list doesnt matter
                     powdict.setdefault(idd, [0, 0, 0])
