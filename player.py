@@ -1,11 +1,7 @@
 import pygame as pg
 from level import *
 import math
-
-UPARROW = 1
-LEFTARROW = 2
-RIGHTARROW = 3
-DOWNARROW = 4
+from constant import *
 
 
 class Player:
