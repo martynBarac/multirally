@@ -115,11 +115,12 @@ while not game_over:
     screen.fill((0, 0, 0))
     for player in player_list:
         
-        color_image = pg.Surface(player.image.get_size())
-        color_image.fill(player.colour)
+        
         draw_image = pg.transform.rotate(player.image, math.degrees(player.angle))
         image_size = draw_image.get_size()
         offset = [player.w/2 - image_size[0]/2, player.h/2 - image_size[1]/2] # offset so image draws in the center of the rectangle
+        color_image = pg.Surface(draw_image.get_size())
+        color_image.fill(player.colour)
         draw_image.set_colorkey((255, 0, 255))
         draw_image.blit(color_image, (0, 0), special_flags=pg.BLEND_RGBA_MULT) # blit coloured rect onto car image
         screen.blit(draw_image, (player.xpos-camera_pos[0]+offset[0], player.ypos-camera_pos[1]+offset[1])) # draw car image
