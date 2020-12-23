@@ -83,25 +83,25 @@ class Player:
         self.xpos = round(self.xpos, 10)
         self.ypos = round(self.ypos, 10)
 
-        #self.xpos = self.xpos%150000
-        #self.ypos = self.ypos%150000
+        # self.xpos = self.xpos%150000
+        # self.ypos = self.ypos%150000
 
-        #COLLISION
+        # COLLISION
         walls = self.check_wall_col(lvl0, False, self.xpos, self.ypos)
         
-        if walls: #Check if it hit anything
-            for col in walls: #Loop through every wall it hit
-                #Right side of block
+        if walls: # Check if it hit anything
+            for col in walls: # Loop through every wall it hit
+                # Right side of block
                 if self.xvel < 0:
                     if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos - self.xvel*dt, self.ypos):
                         self.xpos = col[0] + 32
                         self.xvel = 0
-                #Left side of block
+                # Left side of block
                 elif self.xvel > 0:
                     if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos - self.xvel*dt, self.ypos):
                         self.xpos = col[0] - self.w
                         self.xvel = 0
-                #Bottom side of block
+                # Bottom side of block
                 if self.yvel < 0:
                     if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos, self.ypos - self.yvel*dt):
                         self.ypos = col[1] + 32
