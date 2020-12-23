@@ -1,5 +1,4 @@
 import pygame as pg
-from level import *
 
 import math
 from constant import *
@@ -31,7 +30,12 @@ class Player:
         self.colour = (255, 255, 255)
         self.image = pg.image.load("sprites/car.png")
 
-    def update(self, actions, dt, powerups):
+    def update(self, world, actions):
+        # world variables
+        dt = world.dt
+        lvl0 = world.walls
+
+
         # Do actions
         throttle = 0
         if actions[UPARROW]:
@@ -83,52 +87,40 @@ class Player:
         #self.ypos = self.ypos%150000
 
         #COLLISION
-        walls = self.check_wall_col(False, self.xpos, self.ypos)
+        walls = self.check_wall_col(lvl0, False, self.xpos, self.ypos)
         
         if walls: #Check if it hit anything
             for col in walls: #Loop through every wall it hit
                 #Right side of block
                 if self.xvel < 0:
-                    if self.check_wall_col(col) and not self.check_wall_col(col, self.xpos - self.xvel*dt, self.ypos):
+                    if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos - self.xvel*dt, self.ypos):
                         self.xpos = col[0] + 32
                         self.xvel = 0
                 #Left side of block
                 elif self.xvel > 0:
-                    if self.check_wall_col(col) and not self.check_wall_col(col, self.xpos - self.xvel*dt, self.ypos):
+                    if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos - self.xvel*dt, self.ypos):
                         self.xpos = col[0] - self.w
                         self.xvel = 0
                 #Bottom side of block
                 if self.yvel < 0:
-                    if self.check_wall_col(col) and not self.check_wall_col(col, self.xpos, self.ypos - self.yvel*dt):
+                    if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos, self.ypos - self.yvel*dt):
                         self.ypos = col[1] + 32
                         self.yvel = 0
                 # Top side of block
                 elif self.yvel > 0:
-                    if self.check_wall_col(col) and not self.check_wall_col(col, self.xpos, self.ypos - self.yvel*dt):
+                    if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos, self.ypos - self.yvel*dt):
                         self.ypos = col[1] - self.h
                         self.yvel = 0
-       
-        #POWERUP COLLISION
-        return self.powerup_col(powerups)
-   
-    def powerup_col(self, powerups):
-        i = 0
-        while i < len(powerups):
-            if self.rect_col([self.xpos, self.ypos, self.w, self.h], powerups[i].rect):
-                if powerups[i].type == POWERUP_HEALTH:
-                    self.health += POWERUP_HEALTH_AMT
-                powerups.pop(i)
-            i += 1
-        return powerups
-                
-                
+
     def rect_col(self, rect1, rect2):
-        if not rect1[0] >= rect2[0] + rect2[2] and not rect1[0] + rect1[2] <= rect2[0]: # not to the right and not to the left
-            if not rect1[1] >= rect2[1] + rect2[3] and not rect1[1] + rect1[3] <= rect2[1]: # not below and not above
+        # not to the right and not to the left
+        if not rect1[0] >= rect2[0] + rect2[2] and not rect1[0] + rect1[2] <= rect2[0]:
+            # not below and not above
+            if not rect1[1] >= rect2[1] + rect2[3] and not rect1[1] + rect1[3] <= rect2[1]:
                 return True
         return False
     
-    def check_wall_col(self, wall=False, x=False, y=False):
+    def check_wall_col(self, lvl0, wall=False, x=False, y=False):
         # If wall is set it will only check collisions with that specific wall, otherwise it checks all walls
         if x == False:
             x = self.xpos
