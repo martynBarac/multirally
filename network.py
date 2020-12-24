@@ -11,7 +11,7 @@ HEAD_PLAYERINPUT = "PINP"
 HEAD_POWERINFO = "POWR"
 TICKRATE = 30
 
-class Network:
+class Network():
     def __init__(self, ip, port):
         self.IP = ip
         self.PORT = port

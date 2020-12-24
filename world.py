@@ -19,13 +19,18 @@ class World:
 
         key = None
         for i in range(1000):
-            if not self.entdict[i]:
+            if i not in self.entdict:
                 key = i
                 break
-        if not key:
+        if key is None:
             print("ERROR!!! TOO MANY ENTS IN WORLD!!")
             exit(1)
+        entity._id = key
         self.entdict[key] = entity
+
+    def destroy_entity(self, _id):
+        del(self.entdict[_id])
+        self.entdict[_id] = None
 
     def update_existing_entity(self, entid, newent):
         self.entdict[entid] = newent
@@ -41,7 +46,7 @@ class World:
         if len(self.snapshots) > 10:
             self.snapshots.pop(0)
 
-        for _id in len(self.entdict):
+        for _id in range(len(self.entdict)):
             ent = self.entdict[_id]
             if type(ent) == Player:
                 client = self.player_table[ent]
@@ -49,8 +54,13 @@ class World:
                 ent_data_table = ent.update(self, actions)
             else:
                 ent_data_table = ent.update(self)
+                if ent.ent_destroyed:
+                    self.destroy_entity(_id)
 
             if ent.updated:
                 data_table[_id] = ent_data_table
+                ent.updated = False
+
+        return data_table
 
 

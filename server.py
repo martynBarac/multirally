@@ -110,5 +110,5 @@ while not game_over:
             powmsg = encode_powerup_data(powerups)
             s.send(powmsg)
 
-    dt = TICKRATE
+    dt = 1/TICKRATE
     time.sleep(1/TICKRATE)

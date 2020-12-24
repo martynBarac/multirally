@@ -1,7 +1,8 @@
 import pygame as pg
-
+import entity
 import math
 from constant import *
+from networkvar import NetworkVar
 
 UPARROW = 1
 LEFTARROW = 2
@@ -9,9 +10,12 @@ RIGHTARROW = 3
 DOWNARROW = 4
 
 
-class Player:
+class Player(entity.Entity):
     def __init__(self, x, y, angle, name):
-        self.name = name
+        entity.Entity.__init__(self)
+        self.name = NetworkVar(self, name, 0)
+        self.netxpos = NetworkVar(self, x, 1)
+        self.netypos = NetworkVar(self, y, 2)
         self.xpos = x
         self.ypos = y
         self.w = 16
@@ -58,8 +62,8 @@ class Player:
         fric = speed*0.00001
         centripmax = 0.001
         centripForce = -math.sin(self.angle+direction) * centripmax
-        print("dir:", math.degrees(direction))
-        print("ang:", math.degrees(self.angle))
+        # print("dir:", math.degrees(direction))
+        # print("ang:", math.degrees(self.angle))
 
         if self.yvel < 0:
             fcx = centripForce * math.sin(self.angle)
@@ -74,8 +78,8 @@ class Player:
         self.xvel += self.xacc*dt
         self.yvel += self.yacc*dt
 
-        self.xvel = round(self.xvel, 10)
-        self.yvel = round(self.yvel, 10)
+        self.xvel = round(self.xvel, 3)
+        self.yvel = round(self.yvel, 3)
 
         self.xpos += self.xvel*dt
         self.ypos += self.yvel*dt
@@ -111,6 +115,10 @@ class Player:
                     if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos, self.ypos - self.yvel*dt):
                         self.ypos = col[1] - self.h
                         self.yvel = 0
+
+        self.netxpos.set(self.xpos, True)
+        self.netypos.set(self.ypos, True)
+        return self.prepare_data_table()
 
     def rect_col(self, rect1, rect2):
         # not to the right and not to the left
