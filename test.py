@@ -22,8 +22,8 @@ def world_test():
     print(new_world.update({"127.0.0.1": {1: False, 4: False, 2: True, 3: False}}))
     print(new_world.update({"127.0.0.1": {1: False, 4: False, 2: True, 3: False}}))
 
-    for i in range(100000):
-        print(new_world.update({"127.0.0.1": {1: False, 4: False, 2: False, 3: False}}))
+    print(new_world.update({"127.0.0.1": {1: False, 4: True, 2: True, 3: True}}))
+    print(new_world.update({"127.0.0.1": {1: False, 4: True, 2: True, 3: True}}))
 
 
 

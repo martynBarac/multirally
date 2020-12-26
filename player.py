@@ -78,8 +78,8 @@ class Player(entity.Entity):
         self.xvel += self.xacc*dt
         self.yvel += self.yacc*dt
 
-        self.xvel = round(self.xvel, 3)
-        self.yvel = round(self.yvel, 3)
+        self.xvel = round(self.xvel, 6)
+        self.yvel = round(self.yvel, 6)
 
         self.xpos += self.xvel*dt
         self.ypos += self.yvel*dt

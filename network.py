@@ -1,5 +1,6 @@
 import socket
 import random
+import json
 from player import Player
 from powerup import Powerup
 
@@ -11,19 +12,68 @@ HEAD_PLAYERINPUT = "PINP"
 HEAD_POWERINFO = "POWR"
 TICKRATE = 30
 
-class Network():
+
+class Network:
     def __init__(self, ip, port):
         self.IP = ip
         self.PORT = port
         self.ADDR = (ip, port)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+        self.message_number = 0
+        self.messages_to_send = []
 
     def __del__(self):
         self.close()
 
+    def add_new_msg_reliable(self, data_table):
+        msg = (self.message_number, data_table)
+        self.messages_to_send.append(msg)
+
+    def send_messages_reliable(self):
+        for message in self.messages_to_send:
+            msg_json = json.dumps(message)
+            msg_bytes = msg_json.encode()
+            sent_bytes = 0
+            msg_length = len(msg_bytes)
+            while msg_length > sent_bytes:
+                sent = self.sock.send(msg_bytes[sent_bytes:])
+                if sent == 0:
+                    raise RuntimeError("socket connection broken")
+                sent_bytes += sent
+
+    def receive_msg(self, msg_bytes):
+        msg_json = msg_bytes.decode()
+        msg = json.loads(msg_json)
+        if type(msg) == tuple:
+            if msg[0] == "ACK":
+                # Received Ack for a message so remove it from the list
+                for i in range(len(self.messages_to_send)):
+                    if self.messages_to_send[i][0] == msg[1]:
+                        self.messages_to_send.remove(i)
+            else:
+                # Received a numbered reliable message so send an ACK
+                self.send_ack(msg[0])
+            return msg[1]
+        return msg
+
+    def send_msg(self, message):
+        msg_json = json.dumps(message)
+        msg_bytes = msg_json.encode()
+        sent_bytes = 0
+        msg_length = len(msg_bytes)
+        while msg_length > sent_bytes:
+            sent = self.sock.send(msg_bytes[sent_bytes:])
+            if sent == 0:
+                raise RuntimeError("socket connection broken")
+            sent_bytes += sent
+
+    def send_ack(self, n):
+        message = ("ACK", n)
+        self.send_msg(message)
+
     def send_msg_list(self, msg):
         """
+        LEGACY FUNCTION
         Input a list of strings as a message
         """
         msg = list_to_bytes(msg)
@@ -39,13 +89,15 @@ class Network():
 
     def recv_msg_list(self):
         """
+        LEGACY FUNCTION
         Returns a comma seperated message as a list
         """
         try:
             msg = self.sock.recv(BUFFERSIZE)
             msg = bytes_to_list(msg)
             if msg != []:
-                return random.choice(msg) #We will have so many messages in the buffer! Just pick one from random to read.
+                # We will have so many messages in the buffer! Just pick one from random to read.
+                return random.choice(msg)
             else:
                 return ["NULL"]
 
@@ -61,6 +113,7 @@ class Network():
 
 def decode_player_data(player, name, angle, xpos, ypos, xvel, yvel, health, colour):
     """
+    LEGACY FUNCTION
     :param name: The default name
     :param player: The encoded player data
     :param angle: angle
@@ -108,6 +161,7 @@ def decode_player_data(player, name, angle, xpos, ypos, xvel, yvel, health, colo
 def encode_player_data(pl, send_colour = False):
     """
     Converts player class into a list of variables
+    LEGACY FUNCTION
     """
     name = 'n'+pl.name
     xpos = 'x'+str(pl.xpos)
