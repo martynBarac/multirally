@@ -1,4 +1,3 @@
-import pygame as pg
 import entity
 import math
 from constant import *
@@ -13,6 +12,8 @@ DOWNARROW = 4
 class Player(entity.Entity):
     def __init__(self, x, y, angle, name):
         entity.Entity.__init__(self)
+
+        self.class_id = 1
         self.name = NetworkVar(self, name, 0)
         self.netxpos = NetworkVar(self, x, 1)
         self.netypos = NetworkVar(self, y, 2)
@@ -32,7 +33,7 @@ class Player(entity.Entity):
         self.topSpeed = 0.7
         self.engine_power = 0.001
         self.colour = (255, 255, 255)
-        self.image = pg.image.load("sprites/car.png")
+        self.image = "sprites/car.png"
 
     def update(self, world, actions):
         # world variables
@@ -146,7 +147,18 @@ class Player(entity.Entity):
         if walls:
             return walls
         return False
-        
-    def draw(self):
+
+
+class CPlayer:
+
+    def __init__(self, data_table):
+        self.name = NetworkVar(self, "", 0)
+        self.netxpos = NetworkVar(self, 0, 1, True)
+        self.netypos = NetworkVar(self, 0, 2, True)
+
+    def update(self, data_table):
+        self.apply_data_table(data_table)
+
+    def draw(self, pg):
         rectangle = pg.Rect(self.xpos, self.ypos, 16, 16)
         return rectangle

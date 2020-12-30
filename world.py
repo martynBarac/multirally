@@ -1,4 +1,5 @@
 from player import Player
+import entity_table
 
 
 class World:
@@ -9,6 +10,7 @@ class World:
         self.walls = level
         self.dt = 1
         self.snapshots = [] # Holds entdicts from last 10 frames [oldest frame, ..., newest frame]
+        self.create_ents = [] # a list of any ents that were created
 
     def add_new_player(self, client, name, spawnx, spawny, spawnang):
         new_player = Player(spawnx, spawny, spawnang, name)
@@ -23,11 +25,12 @@ class World:
             if i not in self.entdict:
                 key = i
                 break
-                
+
         if key is None:
             print("ERROR!!! TOO MANY ENTS IN WORLD!!")
             exit(1)
         entity._id = key
+        self.create_ents.append(entity.class_id)
         self.entdict[key] = entity
 
     def destroy_entity(self, _id):
@@ -62,5 +65,8 @@ class World:
             if ent.updated:
                 data_table[_id] = ent_data_table
                 ent.updated = False
+
+        if self.create_ents:
+            data_table["NEW"] = self.create_ents
 
         return data_table

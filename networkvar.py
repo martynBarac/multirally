@@ -1,10 +1,11 @@
 class NetworkVar():
 
-    def __init__(self, ent, var, _id):
+    def __init__(self, ent, var, _id, lerp=False):
         self.var = var
         self.oldvar = var
         self.ent = ent
         self.updated = True
+        self.lerp = lerp
 
         ent.data_table[_id] = self
 
@@ -40,4 +41,3 @@ class NetworkVar():
 
     def send_value(self):
         self.updated = False
-
