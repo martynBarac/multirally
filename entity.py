@@ -1,10 +1,11 @@
+from networkvar import NetworkVar
 
 class Entity:
 
     def __init__(self):
         self._id = None
         self.class_id = 0
-        self.ent_destroyed = False
+        self.ent_destroyed = NetworkVar(self, False, 0)
         self.data_table = {}
         self.updated = True
         pass

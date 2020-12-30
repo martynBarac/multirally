@@ -7,7 +7,7 @@ class Powerup(entity.Entity):
         entity.Entity.__init__(self)
         self.xpos = NetworkVar(self, x, 1)
         self.ypos = NetworkVar(self, y, 2)
-        self.type = NetworkVar(self, typ, 0)
+        self.type = NetworkVar(self, typ, 3)
         self.w = 8
         self.h = 8
 

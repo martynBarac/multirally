@@ -14,7 +14,7 @@ class Player(entity.Entity):
         entity.Entity.__init__(self)
 
         self.class_id = 1
-        self.name = NetworkVar(self, name, 0)
+        self.name = NetworkVar(self, name, 3)
         self.netxpos = NetworkVar(self, x, 1)
         self.netypos = NetworkVar(self, y, 2)
         self.xpos = x
@@ -93,7 +93,7 @@ class Player(entity.Entity):
 
         # COLLISION
         walls = self.check_wall_col(lvl0, False, self.xpos, self.ypos)
-        
+
         if walls: # Check if it hit anything
             for col in walls: # Loop through every wall it hit
                 # Right side of block
@@ -128,7 +128,7 @@ class Player(entity.Entity):
             if not rect1[1] >= rect2[1] + rect2[3] and not rect1[1] + rect1[3] <= rect2[1]:
                 return True
         return False
-    
+
     def check_wall_col(self, lvl0, wall=False, x=False, y=False):
         # If wall is set it will only check collisions with that specific wall, otherwise it checks all walls
         if x == False:
