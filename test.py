@@ -53,3 +53,4 @@ def client_test():
 
         msg = my_client.receive_msg()
         print(msg)
+world_test()

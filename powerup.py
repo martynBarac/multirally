@@ -22,7 +22,7 @@ class Powerup(entity.Entity):
                         player.health = max(player.health + POWERUP_HEALTH_AMT, 200)
 
                     # Destroy self
-                    #self.destroy(world)
+                    self.destroy(world)
 
     def update(self, world):
         self.check_col(world)

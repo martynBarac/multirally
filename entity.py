@@ -5,16 +5,15 @@ class Entity:
     def __init__(self):
         self._id = None
         self.class_id = 0
-        self.ent_destroyed = NetworkVar(self, False, 0)
         self.data_table = {}
+        self.ent_destroyed = NetworkVar(self, False, 0)
         self.updated = True
-        pass
 
     def update(self, world):
         pass
 
     def destroy(self, world):
-        self.ent_destroyed = True
+        self.ent_destroyed.set(True, True)
 
     def prepare_data_table(self):
 

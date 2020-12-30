@@ -53,18 +53,20 @@ class World:
 
         for _id in range(len(self.entdict)):
             ent = self.entdict[_id]
-            if type(ent) == Player:
-                client = self.player_table[ent]
-                actions = client_input_table[client]
-                ent_data_table = ent.update(self, actions)
-            else:
-                ent_data_table = ent.update(self)
-                if ent.ent_destroyed:
-                    self.destroy_entity(_id)
+            if ent != None:
+                if type(ent) == Player:
+                    client = self.player_table[ent]
+                    actions = client_input_table[client]
+                    ent_data_table = ent.update(self, actions)
+                else:
+                    ent_data_table = ent.update(self)
+                    if ent.ent_destroyed.var:
+                        self.destroy_entity(_id)
 
-            if ent.updated:
-                data_table[_id] = ent_data_table
-                ent.updated = False
+
+                if ent.updated:
+                    data_table[_id] = ent_data_table
+                    ent.updated = False
 
         if self.create_ents:
             data_table["NEW"] = self.create_ents
