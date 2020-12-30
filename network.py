@@ -14,11 +14,9 @@ TICKRATE = 30
 
 
 class Network:
-    def __init__(self, ip, port):
-        self.IP = ip
-        self.PORT = port
-        self.ADDR = (ip, port)
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    def __init__(self, sock):
+
+        self.sock = sock
         self.message_number = 0
         self.messages_to_send = []
 
@@ -41,19 +39,10 @@ class Network:
                     raise RuntimeError("socket connection broken")
                 sent_bytes += sent
 
-    def receive_msg(self, msg_bytes):
+    def receive_msg(self):
+        msg_bytes = self.sock.recv(BUFFERSIZE)
         msg_json = msg_bytes.decode()
         msg = json.loads(msg_json)
-        if type(msg) == tuple:
-            if msg[0] == "ACK":
-                # Received Ack for a message so remove it from the list
-                for i in range(len(self.messages_to_send)):
-                    if self.messages_to_send[i][0] == msg[1]:
-                        self.messages_to_send.remove(i)
-            else:
-                # Received a numbered reliable message so send an ACK
-                self.send_ack(msg[0])
-            return msg[1]
         return msg
 
     def send_msg(self, message):
