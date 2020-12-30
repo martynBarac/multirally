@@ -4,11 +4,11 @@ from player import Player
 class World:
 
     def __init__(self, level):
-        self.player_table = {}
-        self.entdict = {}
+        self.player_table = {} # Holds all players {Class: client, ...}
+        self.entdict = {} # Holds all entities {id: Class}
         self.walls = level
         self.dt = 1
-        self.snapshots = []
+        self.snapshots = [] # Holds entdicts from last 10 frames [oldest frame, ..., newest frame]
 
     def add_new_player(self, client, name, spawnx, spawny, spawnang):
         new_player = Player(spawnx, spawny, spawnang, name)
@@ -18,10 +18,12 @@ class World:
     def add_new_entity(self, entity):
 
         key = None
+        # Find next untaken id
         for i in range(1000):
             if i not in self.entdict:
                 key = i
                 break
+                
         if key is None:
             print("ERROR!!! TOO MANY ENTS IN WORLD!!")
             exit(1)
@@ -62,5 +64,3 @@ class World:
                 ent.updated = False
 
         return data_table
-
-
