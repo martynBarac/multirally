@@ -1,11 +1,13 @@
 from world import World
 from level import *
 from entity import *
-
+from powerup import *
 
 def world_test():
     new_world = World(lvl0)
     new_world.add_new_player("127.0.0.1", "Hello", 0, 0, 0)
+
+    new_world.add_new_entity(Powerup(16.01, 0, 0))
 
     print(new_world.entdict)
     print(new_world.player_table)
