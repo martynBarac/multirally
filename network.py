@@ -40,10 +40,10 @@ class Network:
                 sent_bytes += sent
 
     def receive_msg(self):
-        msg_bytes = self.sock.recv(BUFFERSIZE)
+        msg_bytes, addr = self.sock.recv(BUFFERSIZE)
         msg_json = msg_bytes.decode()
         msg = json.loads(msg_json)
-        return msg
+        return msg, addr
 
     def send_msg(self, message):
         msg_json = json.dumps(message)
@@ -196,6 +196,7 @@ def decode_powerup_data(msg):
         decoded.append(Powerup(po[0], po[1], po[2]))
         
     return decoded
+
 
 def update_existing_player(new_player_data, existing_player):
     new_player = decode_player_data(new_player_data,

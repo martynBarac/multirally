@@ -159,6 +159,7 @@ class CPlayer:
     def update(self, data_table):
         self.apply_data_table(data_table)
 
-    def draw(self, pg):
+    def draw(self, pg, screen):
         rectangle = pg.Rect(self.xpos, self.ypos, 16, 16)
+        pg.draw.rect(screen, (0, 150, 0), rectangle)
         return rectangle

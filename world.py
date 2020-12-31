@@ -30,7 +30,7 @@ class World:
             print("ERROR!!! TOO MANY ENTS IN WORLD!!")
             exit(1)
         entity._id = key
-        self.create_ents.append(entity.class_id)
+        self.create_ents.append((entity.class_id,key))
         self.entdict[key] = entity
 
     def destroy_entity(self, _id):

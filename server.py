@@ -21,6 +21,7 @@ class Server:
         self.maybe_writeable = []
 
         self.network_dict = {}
+        self.client_input_table = {}
         self.sock.listen(self.MAXPLAYERS)
 
     def update(self):
@@ -32,10 +33,15 @@ class Server:
                 self.maybe_readable.append(conn)
                 self.maybe_writeable.append(conn)
                 self.network_dict[conn] = Network(conn)
+
+                self.world.add_new_player(self.network_dict[conn], "car", 0, 0, 0)
                 print(addr, "Connected!")
             else:
                 msg = self.network_dict[s].receive_msg()
-                print(msg)
+                self.client_input_table[self.network_dict[s]] = msg
 
         for s in writeable:
             self.network_dict[s].send_msg({1: "John"})
+
+        # Start updating world
+        self.world.update(self.client_input_table)
