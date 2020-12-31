@@ -39,7 +39,7 @@ def server_test():
     my_server = server.Server("192.168.0.17", 27014, lvl0)
     while True:
         my_server.update()
-        time.sleep(1/10)
+        time.sleep(1/30)
 
 
 def client_test():

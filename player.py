@@ -30,8 +30,8 @@ class Player(entity.Entity):
         self.angle = angle
 
         self.health = 100
-        self.topSpeed = 0.7
-        self.engine_power = 0.01
+        self.topSpeed = 10
+        self.engine_power = 1.
         self.colour = (255, 255, 255)
         self.image = "sprites/car.png"
 
@@ -52,7 +52,7 @@ class Player(entity.Entity):
         if actions[RIGHTARROW]:
             self.angle -= 0.1
 
-        maxfric = 0.005
+        maxfric = 0.5
 
         self.angle = self.angle % (2 * math.pi)
         self.angle = round(self.angle, 10)
@@ -60,8 +60,8 @@ class Player(entity.Entity):
         speed = math.sqrt(self.xvel**2 + self.yvel**2)
         direction = math.atan2(self.yvel, self.xvel)
 
-        fric = speed*0.00001
-        centripmax = 0.001
+        fric = speed*0.001
+        centripmax = 2
         centripForce = -math.sin(self.angle+direction) * centripmax
         # print("dir:", math.degrees(direction))
         # print("ang:", math.degrees(self.angle))
@@ -79,8 +79,8 @@ class Player(entity.Entity):
         self.xvel += self.xacc*dt
         self.yvel += self.yacc*dt
 
-        self.xvel = round(self.xvel, 6)
-        self.yvel = round(self.yvel, 6)
+        self.xvel = round(self.xvel, 4)
+        self.yvel = round(self.yvel, 4)
 
         self.xpos += self.xvel*dt
         self.ypos += self.yvel*dt
