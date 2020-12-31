@@ -29,8 +29,15 @@ class Powerup(entity.Entity):
         return self.prepare_data_table()
 
 
-    #def draw(self, camx, camy):
-    #    return_rect = self.rect.copy()
-    #    return_rect.x = self.rect.x - camx
-    #    return_rect.y = self.rect.y - camy
-    #    return return_rect
+class CPowerup(entity.Entity):
+    def __init__(self):
+        entity.Entity.__init__(self)
+        self.xpos = NetworkVar(self, 0, 1, True)
+        self.ypos = NetworkVar(self, 0, 2, True)
+
+    def draw(self, pg, screen):
+        rect = [self.xpos.var, self.ypos.var, 8, 8]
+        pg.draw.rect(screen, (200, 200, 0), rect)
+        return rect
+
+
