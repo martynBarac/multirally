@@ -7,6 +7,7 @@ class Entity:
         self.class_id = 0
         self.data_table = {}
         self.ent_destroyed = NetworkVar(self, False, 0)
+        self.ent_destroyed.updated = False
         self.updated = True
 
     def update(self, world):
