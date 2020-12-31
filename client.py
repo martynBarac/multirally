@@ -5,7 +5,6 @@ from constant import *
 from network import *
 from level import *
 from powerup import *
-import json
 import entity_table
 
 SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
@@ -56,16 +55,17 @@ while not game_over:
     if keyboard_inputs[pg.K_DOWN]:
         client_actions[DOWNARROW] = True
 
-    message = json.dumps(client_actions)
-    my_client.send_msg(message)
+    my_client.send_msg(client_actions)
 
-    msg_bytes = my_client.recv_msg_list()
-    if msg_bytes:
-        msg = json.loads(msg_bytes)
-        if "NEW" in msg:     # Add new ents first to not cause confusion
-            for new_ent in msg["NEW"]:
-                entity_dict[new_ent[1]] = entity_table.entity_table[new_ent[0]][1]
-            del(msg["NEW"])  # Delete the "NEW" stuff because we don't need it ever again
+    msg = my_client.receive_msg()
+    print(msg)
+    if msg:
+        if 'NEW' in msg:     # Add new ents first to not cause confusion
+            for new_ent in msg['NEW']:
+                entity_dict[str(new_ent[1])] = entity_table.entity_table[new_ent[0]][1]()
+                print("Created new entity", entity_dict[str(new_ent[1])])
+
+            del(msg['NEW'])  # Delete the "NEW" stuff because we don't need it ever again
 
         for _id in msg:
             entity_dict[_id].apply_data_table(msg[_id])  # Apply all the data we received to the ents
@@ -73,10 +73,10 @@ while not game_over:
     # Draw everything
     screen.fill((0, 0, 0))
     for _id in entity_dict:
-        entity_dict[_id].draw(pg)
+        entity_dict[_id].draw(pg, screen)
 
     for wall in lvl0:
         pg.draw.rect(screen, (255, 255, 255), [wall[0], wall[1], 32, 32])
         
-    dt = clock.tick(FRAMERATE)
+    dt = clock.tick(FRAMERATE/2)
     pg.display.update()

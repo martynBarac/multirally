@@ -8,6 +8,7 @@ import server
 import time
 import socket
 
+
 def world_test():
 
     new_world = World(lvl0)
@@ -35,10 +36,10 @@ def world_test():
 
 
 def server_test():
-    my_server = server.Server("192.168.0.17", 27014)
+    my_server = server.Server("192.168.0.17", 27014, lvl0)
     while True:
         my_server.update()
-        time.sleep(1/60)
+        time.sleep(1/10)
 
 
 def client_test():
@@ -53,3 +54,7 @@ def client_test():
 
         msg = my_client.receive_msg()
         print(msg)
+
+
+server_test()
+

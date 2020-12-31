@@ -30,7 +30,7 @@ class World:
             print("ERROR!!! TOO MANY ENTS IN WORLD!!")
             exit(1)
         entity._id = key
-        self.create_ents.append((entity.class_id,key))
+        self.create_ents.append((entity.class_id, key))
         self.entdict[key] = entity
 
     def destroy_entity(self, _id):
@@ -43,6 +43,17 @@ class World:
     def get_entity_from_id(self, _id):
         return self.entdict[_id]
 
+    def send_entire_gamestate(self):
+        data_table = {}
+        new_ents = []
+        for _id in self.entdict:
+            ent = self.entdict[_id]
+            ent_data_table = ent.prepare_data_table(True)
+            data_table[_id] = ent_data_table
+            new_ents.append((ent.class_id, _id))
+        data_table["NEW"] = new_ents
+        return data_table
+
     def update(self, client_input_table):
         """This function should return any entities that are updated"""
 
@@ -51,11 +62,14 @@ class World:
         if len(self.snapshots) > 10:
             self.snapshots.pop(0)
 
-        for _id in range(len(self.entdict)):
+        for _id in self.entdict:
             ent = self.entdict[_id]
             if type(ent) == Player:
                 client = self.player_table[ent]
-                actions = client_input_table[client]
+                if client in client_input_table:
+                    actions = client_input_table[client]
+                else:
+                    actions = {'1': False, '2': False, '3': False, '4': False}
                 ent_data_table = ent.update(self, actions)
             else:
                 ent_data_table = ent.update(self)
@@ -68,5 +82,6 @@ class World:
 
         if self.create_ents:
             data_table["NEW"] = self.create_ents
+            self.create_ents = []
 
         return data_table

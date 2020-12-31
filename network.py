@@ -19,6 +19,7 @@ class Network:
         self.sock = sock
         self.message_number = 0
         self.messages_to_send = []
+        self.unread_messages = ""
 
     def __del__(self):
         self.close()
@@ -40,10 +41,21 @@ class Network:
                 sent_bytes += sent
 
     def receive_msg(self):
-        msg_bytes, addr = self.sock.recv(BUFFERSIZE)
+        msg_bytes = self.sock.recv(BUFFERSIZE)
         msg_json = msg_bytes.decode()
-        msg = json.loads(msg_json)
-        return msg, addr
+        self.unread_messages = self.unread_messages+msg_json
+        msg = self.unread_messages
+        for i in range(len(msg)):
+            if i+1 < len(msg):
+                if msg[i]+msg[i+1] == "}{":
+                    msg = self.unread_messages[:i+1]
+                    self.unread_messages = self.unread_messages[i+1:]
+                    break
+
+        if msg == self.unread_messages:
+            self.unread_messages = ""
+        msg = json.loads(msg)
+        return msg
 
     def send_msg(self, message):
         msg_json = json.dumps(message)

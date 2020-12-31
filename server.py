@@ -4,12 +4,11 @@ from network import *
 import select
 import world
 
-
 class Server:
 
-    def __init__(self, ip, port):
+    def __init__(self, ip, port, lvl):
         self.MAXPLAYERS = 1
-        self.world = world.World
+        self.world = world.World(lvl)
 
         self.IP = ip
         self.PORT = port
@@ -24,6 +23,10 @@ class Server:
         self.client_input_table = {}
         self.sock.listen(self.MAXPLAYERS)
 
+        self.data_table = {}
+
+        self.new_clients = []
+
     def update(self):
         readable, writeable, exception = select.select(self.maybe_readable, self.maybe_writeable, self.maybe_readable)
         for s in readable:
@@ -33,15 +36,20 @@ class Server:
                 self.maybe_readable.append(conn)
                 self.maybe_writeable.append(conn)
                 self.network_dict[conn] = Network(conn)
-
-                self.world.add_new_player(self.network_dict[conn], "car", 0, 0, 0)
+                self.world.add_new_player(conn, "car", 0, 0, 0)
+                self.new_clients.append(conn)
                 print(addr, "Connected!")
             else:
                 msg = self.network_dict[s].receive_msg()
-                self.client_input_table[self.network_dict[s]] = msg
+                self.client_input_table[s] = msg
 
         for s in writeable:
-            self.network_dict[s].send_msg({1: "John"})
+            if s in self.new_clients:
+                self.network_dict[s].send_msg(self.world.send_entire_gamestate())
+                self.new_clients.remove(s)
+            else:
+                self.network_dict[s].send_msg(self.data_table)
 
         # Start updating world
-        self.world.update(self.client_input_table)
+        self.data_table = self.world.update(self.client_input_table)
+

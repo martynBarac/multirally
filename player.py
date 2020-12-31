@@ -3,17 +3,17 @@ import math
 from constant import *
 from networkvar import NetworkVar
 
-UPARROW = 1
-LEFTARROW = 2
-RIGHTARROW = 3
-DOWNARROW = 4
+UPARROW = '1'
+LEFTARROW = '2'
+RIGHTARROW = '3'
+DOWNARROW = '4'
 
 
 class Player(entity.Entity):
     def __init__(self, x, y, angle, name):
         entity.Entity.__init__(self)
-
         self.class_id = 1
+
         self.name = NetworkVar(self, name, 0)
         self.netxpos = NetworkVar(self, x, 1)
         self.netypos = NetworkVar(self, y, 2)
@@ -31,7 +31,7 @@ class Player(entity.Entity):
 
         self.health = 100
         self.topSpeed = 0.7
-        self.engine_power = 0.001
+        self.engine_power = 0.01
         self.colour = (255, 255, 255)
         self.image = "sprites/car.png"
 
@@ -149,9 +149,10 @@ class Player(entity.Entity):
         return False
 
 
-class CPlayer:
+class CPlayer(entity.Entity):
 
-    def __init__(self, data_table):
+    def __init__(self):
+        entity.Entity.__init__(self)
         self.name = NetworkVar(self, "", 0)
         self.netxpos = NetworkVar(self, 0, 1, True)
         self.netypos = NetworkVar(self, 0, 2, True)
@@ -160,6 +161,6 @@ class CPlayer:
         self.apply_data_table(data_table)
 
     def draw(self, pg, screen):
-        rectangle = pg.Rect(self.xpos, self.ypos, 16, 16)
+        rectangle = pg.Rect(self.netxpos.var, self.netypos.var, 16, 16)
         pg.draw.rect(screen, (0, 150, 0), rectangle)
         return rectangle

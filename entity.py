@@ -15,9 +15,9 @@ class Entity:
     def destroy(self, world):
         self.ent_destroyed = True
 
-    def prepare_data_table(self):
+    def prepare_data_table(self, send_everything=False):
 
-        if not self.updated:
+        if not self.updated and not send_everything:
             return None
 
         datatable_to_send = {}
@@ -28,10 +28,14 @@ class Entity:
             if netvar.updated:
                 datatable_to_send[_id] = netvar.var
                 netvar.send_value()
+            elif send_everything:
+                datatable_to_send[_id] = netvar.var
 
         return datatable_to_send
 
     def apply_data_table(self, datatable_to_receive):
         for _id in datatable_to_receive:
-            self.data_table[_id].var = datatable_to_receive[_id]
+            __id = int(_id)
+            self.data_table[__id].var = datatable_to_receive[_id]
+            # print(self.data_table[__id].var)
 

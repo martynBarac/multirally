@@ -1,4 +1,4 @@
-class NetworkVar():
+class NetworkVar:
 
     def __init__(self, ent, var, _id, lerp=False):
         self.var = var
