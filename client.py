@@ -61,7 +61,7 @@ while not game_over:
     print(msg)
     if msg:
         if 'NEW' in msg:     # Add new ents first to not cause confusion
-            for new_ent in msg['NEW']:
+            for new_ent in msg['NEW']: # in new message: [[class_id, entity_id], [class_id, entity_id], ...]
                 entity_dict[str(new_ent[1])] = entity_table.entity_table[new_ent[0]][1]()
                 print("Created new entity", entity_dict[str(new_ent[1])])
 
@@ -77,6 +77,6 @@ while not game_over:
 
     for wall in lvl0:
         pg.draw.rect(screen, (255, 255, 255), [wall[0], wall[1], 32, 32])
-        
+
     dt = clock.tick(FRAMERATE/2)
     pg.display.update()

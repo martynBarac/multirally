@@ -5,6 +5,7 @@ from constant import *
 class Powerup(entity.Entity):
     def __init__(self, x=50, y=50, typ=0):
         entity.Entity.__init__(self)
+        self.class_id = 2
         self.xpos = NetworkVar(self, x, 1)
         self.ypos = NetworkVar(self, y, 2)
         self.type = NetworkVar(self, typ, 0)
@@ -34,6 +35,7 @@ class CPowerup(entity.Entity):
         entity.Entity.__init__(self)
         self.xpos = NetworkVar(self, 0, 1, True)
         self.ypos = NetworkVar(self, 0, 2, True)
+        self.type = NetworkVar(self, 0, 0)
 
     def draw(self, pg, screen):
         rect = [self.xpos.var, self.ypos.var, 8, 8]
