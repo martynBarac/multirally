@@ -39,14 +39,14 @@ class CPowerup(entity.Entity):
         self.check_type = True
         self.image = None
 
-    def draw(self, pg, screen):
+    def draw(self, pg, screen, cam):
         if self.check_type:
             if self.type.var == POWERUP_HEALTH:
                 self.image = pg.image.load('sprites/health.png').convert()
 
             self.check_type = False
 
-        rect = [self.xpos.var, self.ypos.var, 8, 8]
+        rect = [self.xpos.var-cam[0], self.ypos.var-cam[1], 8, 8]
         screen.blit(self.image, rect)
         #pg.draw.rect(screen, (200, 200, 0), rect)
         return rect

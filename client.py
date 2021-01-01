@@ -22,7 +22,6 @@ else:
 IP = addr[0]
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
 my_client = Network(sock)
 my_client.connect(IP, PORT)
 print("connected!")
@@ -41,6 +40,7 @@ dt = 0
 game_over = False
 
 old_client_actions = ACTIONS.copy()
+sock.setblocking(0)
 start_time = time.perf_counter()
 while not game_over:
     # Handle client inputs
@@ -59,13 +59,17 @@ while not game_over:
     if keyboard_inputs[pg.K_DOWN]:
         client_actions[DOWNARROW] = True
 
-    if time.perf_counter() - start_time > 0.1 and old_client_actions != client_actions:
+    if client_actions != old_client_actions and time.perf_counter() - start_time > 0.1:
+        print(client_actions)
         my_client.send_msg(client_actions)
         start_time = time.perf_counter()
         old_client_actions = client_actions.copy()
 
+    try:
+        msg = my_client.receive_msg()
+    except BlockingIOError:
+        msg = None
 
-    msg = my_client.receive_msg()
     if msg:
         if 'NEW' in msg:     # Add new ents first to not cause confusion
             for new_ent in msg['NEW']: # in new message: [[class_id, entity_id], [class_id, entity_id], ...]
