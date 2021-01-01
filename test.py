@@ -36,7 +36,8 @@ def world_test():
 
 
 def server_test():
-    my_server = server.Server("192.168.0.17", 27014, lvl0)
+    # socket.gethostbyname(socket.gethostname() gets ip address
+    my_server = server.Server( socket.gethostbyname(socket.gethostname() ), 27014, lvl0)
     while True:
         my_server.update()
         time.sleep(1/30)
