@@ -170,7 +170,7 @@ class CPlayer(entity.Entity):
     def update(self, data_table):
         self.apply_data_table(data_table)
 
-    def draw(self, pg, screen):
+    def draw(self, pg, screen, cam):
         rectangle = pg.Rect(self.netxpos.var, self.netypos.var, 16, 16)
         deg = self.netangle.var * 180/math.pi
 
@@ -180,5 +180,5 @@ class CPlayer(entity.Entity):
         drawx = self.netxpos.var - (width-CAR_SIZE)/2
         drawy = self.netypos.var - (width-CAR_SIZE)/2
 
-        screen.blit(self.rotimage, [drawx, drawy])
+        screen.blit(self.rotimage, [drawx-cam[0], drawy-cam[1]])
         return rectangle

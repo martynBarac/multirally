@@ -40,7 +40,7 @@ camfollowing = None
 dt = 0
 game_over = False
 
-
+old_client_actions = ACTIONS.copy()
 start_time = time.perf_counter()
 while not game_over:
     # Handle client inputs
@@ -62,8 +62,8 @@ while not game_over:
     if time.perf_counter() - start_time > 0.1 and old_client_actions != client_actions:
         my_client.send_msg(client_actions)
         start_time = time.perf_counter()
+        old_client_actions = client_actions.copy()
 
-    old_client_actions = client_actions.copy()
 
     msg = my_client.receive_msg()
     if msg:
