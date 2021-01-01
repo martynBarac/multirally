@@ -67,6 +67,12 @@ while not game_over:
 
             del(msg['NEW'])  # Delete the "NEW" stuff because we don't need it ever again
 
+        if 'DEL' in msg:
+            for id in msg['DEL']:
+                print("Deleted entity", entity_dict[str(id)])
+                del(entity_dict[str(id)])
+            del(msg['DEL'])
+
         for _id in msg:
             entity_dict[_id].apply_data_table(msg[_id])  # Apply all the data we received to the ents
 
