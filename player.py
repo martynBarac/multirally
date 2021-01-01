@@ -172,20 +172,13 @@ class CPlayer(entity.Entity):
 
     def draw(self, pg, screen):
         rectangle = pg.Rect(self.netxpos.var, self.netypos.var, 16, 16)
-        ang = self.netangle.var
-        x__ = 5*math.cos(ang)
-        y__ = 5*math.sin(ang)
+        deg = self.netangle.var * 180/math.pi
 
-        deg = ang * 180/math.pi
-
-        #pg.draw.rect(screen, (0, 150, 0), rectangle)
         self.rotimage = pg.transform.rotate(self.orgimage, deg)
-        #self.rotimage.set_colorkey((255, 0, 255))
 
         width = self.rotimage.get_rect().width
         drawx = self.netxpos.var - (width-CAR_SIZE)/2
         drawy = self.netypos.var - (width-CAR_SIZE)/2
 
         screen.blit(self.rotimage, [drawx, drawy])
-        pg.draw.line(screen, (0, 255, 0), (self.netxpos.var, self.netypos.var), (x__+self.netxpos.var, y__+self.netypos.var))
         return rectangle
