@@ -46,6 +46,7 @@ class Server:
         for s in writeable:
             if s in self.new_clients:
                 self.network_dict[s].send_msg(self.world.send_entire_gamestate())
+                self.network_dict[s].send_msg(self.world.get_camera_for_player(s))
                 self.new_clients.remove(s)
             else:
                 self.network_dict[s].send_msg(self.data_table)

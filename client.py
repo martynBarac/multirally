@@ -35,9 +35,13 @@ entity_dict = {}
 pg.init()
 screen = pg.display.set_mode(SCREEN_SIZE)
 clock = pg.time.Clock()
-
+cam = (0, 0)
+camfollowing = None
 dt = 0
 game_over = False
+
+
+start_time = time.perf_counter()
 while not game_over:
     # Handle client inputs
     for event in pg.event.get():
@@ -55,10 +59,13 @@ while not game_over:
     if keyboard_inputs[pg.K_DOWN]:
         client_actions[DOWNARROW] = True
 
-    my_client.send_msg(client_actions)
+    if time.perf_counter() - start_time > 0.1 and old_client_actions != client_actions:
+        my_client.send_msg(client_actions)
+        start_time = time.perf_counter()
+
+    old_client_actions = client_actions.copy()
 
     msg = my_client.receive_msg()
-    print(msg)
     if msg:
         if 'NEW' in msg:     # Add new ents first to not cause confusion
             for new_ent in msg['NEW']: # in new message: [[class_id, entity_id], [class_id, entity_id], ...]
@@ -73,16 +80,23 @@ while not game_over:
                 del(entity_dict[str(id)])
             del(msg['DEL'])
 
+        # This way of doing the camera should be changed to save bandwidth
+        if 'CAM' in msg:
+            camfollowing = entity_dict[str(msg['CAM'])]
+            del (msg['CAM'])
+
         for _id in msg:
             entity_dict[_id].apply_data_table(msg[_id])  # Apply all the data we received to the ents
 
     # Draw everything
     screen.fill((0, 0, 0))
     for _id in entity_dict:
-        entity_dict[_id].draw(pg, screen)
+        if camfollowing:
+            cam = (camfollowing.netxpos.var-SCREEN_WIDTH//2, camfollowing.netypos.var-SCREEN_HEIGHT//2)
+        entity_dict[_id].draw(pg, screen, cam)
 
     for wall in lvl0:
-        pg.draw.rect(screen, (255, 255, 255), [wall[0], wall[1], 32, 32])
+        pg.draw.rect(screen, (255, 255, 255), [wall[0]-cam[0], wall[1]-cam[1], 32, 32])
 
     dt = clock.tick(FRAMERATE/2)
     pg.display.update()

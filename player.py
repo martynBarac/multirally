@@ -164,8 +164,8 @@ class CPlayer(entity.Entity):
     def update(self, data_table):
         self.apply_data_table(data_table)
 
-    def draw(self, pg, screen):
-        rectangle = pg.Rect(self.netxpos.var, self.netypos.var, 16, 16)
+    def draw(self, pg, screen, cam):
+        rectangle = pg.Rect(self.netxpos.var-cam[0], self.netypos.var-cam[1], 16, 16)
         ang = self.netangle.var
         x__ = 5*math.cos(ang)
         y__ = 5*math.sin(ang)

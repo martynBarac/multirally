@@ -37,8 +37,8 @@ class CPowerup(entity.Entity):
         self.ypos = NetworkVar(self, 0, 2, True)
         self.type = NetworkVar(self, 0, 0)
 
-    def draw(self, pg, screen):
-        rect = [self.xpos.var, self.ypos.var, 8, 8]
+    def draw(self, pg, screen, cam):
+        rect = [self.xpos.var-cam[0], self.ypos.var-cam[1], 8, 8]
         pg.draw.rect(screen, (200, 200, 0), rect)
         return rect
 

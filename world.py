@@ -45,9 +45,15 @@ class World:
     def get_entity_from_id(self, _id):
         return self.entdict[_id]
 
+    def get_camera_for_player(self, client):
+        for player in self.player_table:
+            if self.player_table[player] == client:
+                return {"CAM":player._id}
+
     def send_entire_gamestate(self):
         data_table = {}
         new_ents = []
+        print(self.entdict)
         for _id in self.entdict:
             ent = self.entdict[_id]
             ent_data_table = ent.prepare_data_table(True)
@@ -59,11 +65,11 @@ class World:
     def update(self, client_input_table):
         """This function should return any entities that are updated"""
 
-        data_table = {}
         self.snapshots.append(self.entdict.copy())
         if len(self.snapshots) > 10:
             self.snapshots.pop(0)
 
+        data_table = {}
         for _id in self.entdict:
             ent = self.entdict[_id]
             if ent != None:
@@ -83,12 +89,11 @@ class World:
                     data_table[_id] = ent_data_table
                     ent.updated = False
 
-        if self.create_ents:
-            data_table["NEW"] = self.create_ents
-            self.create_ents = []
+                if self.create_ents:
+                    data_table["NEW"] = self.create_ents
+                    self.create_ents = []
 
-        if self.delete_ents:
-            data_table["DEL"] = self.delete_ents
-            self.delete_ents = []
-
+                if self.delete_ents:
+                    data_table["DEL"] = self.delete_ents
+                    self.delete_ents = []
         return data_table

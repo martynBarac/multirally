@@ -1,3 +1,5 @@
+
+
 class NetworkVar:
 
     def __init__(self, ent, var, _id, lerp=False):
@@ -10,7 +12,7 @@ class NetworkVar:
 
         ent.data_table[_id] = self
 
-    def get(self, obj, objtype=None):
+    def get(self, dt):
         return self.var
 
     def set(self, value, check_update=False):
