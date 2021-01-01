@@ -50,9 +50,10 @@ class World:
         new_ents = []
         for _id in self.entdict:
             ent = self.entdict[_id]
-            ent_data_table = ent.prepare_data_table(True)
-            data_table[_id] = ent_data_table
-            new_ents.append((ent.class_id, _id))
+            if ent != None:
+                ent_data_table = ent.prepare_data_table(True)
+                data_table[_id] = ent_data_table
+                new_ents.append((ent.class_id, _id))
         data_table["NEW"] = new_ents
         return data_table
 
