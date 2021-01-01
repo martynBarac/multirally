@@ -18,7 +18,9 @@ class Player(entity.Entity):
 
         self.name = NetworkVar(self, name, 0)
         self.netxpos = NetworkVar(self, x, 1)
+        self.netxpos.quantise = 0
         self.netypos = NetworkVar(self, y, 2)
+        self.netypos.quantise = 0
         self.netangle = NetworkVar(self, y, 3)
         self.netangle.quantise = 3
         self.xpos = x
