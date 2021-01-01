@@ -3,6 +3,8 @@ import math
 from constant import *
 from networkvar import NetworkVar
 
+import pygame as pg # Needs to be imported for image loading
+
 UPARROW = '1'
 LEFTARROW = '2'
 RIGHTARROW = '3'
@@ -21,8 +23,8 @@ class Player(entity.Entity):
         self.netangle.quantise = 3
         self.xpos = x
         self.ypos = y
-        self.w = 16
-        self.h = 16
+        self.w = CAR_SIZE
+        self.h = CAR_SIZE
         self.xvel = 0
         self.yvel = 0
 
@@ -95,7 +97,7 @@ class Player(entity.Entity):
 
         # COLLISION
         walls = self.check_wall_col(lvl0, False, self.xpos, self.ypos)
-        
+
         if walls: # Check if it hit anything
             for col in walls: # Loop through every wall it hit
                 # Right side of block
@@ -131,7 +133,7 @@ class Player(entity.Entity):
             if not rect1[1] >= rect2[1] + rect2[3] and not rect1[1] + rect1[3] <= rect2[1]:
                 return True
         return False
-    
+
     def check_wall_col(self, lvl0, wall=False, x=False, y=False):
         # If wall is set it will only check collisions with that specific wall, otherwise it checks all walls
         if x == False:
@@ -160,16 +162,23 @@ class CPlayer(entity.Entity):
         self.netxpos = NetworkVar(self, 0, 1, True)
         self.netypos = NetworkVar(self, 0, 2, True)
         self.netangle = NetworkVar(self, 0, 3, True)
+        self.orgimage = pg.image.load("sprites/car.png").convert_alpha()
+        self.orgimage.fill((255, 255, 0), None, pg.BLEND_MULT)
+        self.rotimage = self.orgimage.copy()
+
 
     def update(self, data_table):
         self.apply_data_table(data_table)
 
-    def draw(self, pg, screen, cam):
-        rectangle = pg.Rect(self.netxpos.var-cam[0], self.netypos.var-cam[1], 16, 16)
-        ang = self.netangle.var
-        x__ = 5*math.cos(ang)
-        y__ = 5*math.sin(ang)
+    def draw(self, pg, screen):
+        rectangle = pg.Rect(self.netxpos.var, self.netypos.var, 16, 16)
+        deg = self.netangle.var * 180/math.pi
 
-        pg.draw.rect(screen, (0, 150, 0), rectangle)
-        pg.draw.line(screen, (0, 255, 0), (self.netxpos.var, self.netypos.var), (x__+self.netxpos.var, y__+self.netypos.var))
+        self.rotimage = pg.transform.rotate(self.orgimage, deg)
+
+        width = self.rotimage.get_rect().width
+        drawx = self.netxpos.var - (width-CAR_SIZE)/2
+        drawy = self.netypos.var - (width-CAR_SIZE)/2
+
+        screen.blit(self.rotimage, [drawx, drawy])
         return rectangle
