@@ -162,7 +162,8 @@ class CPlayer(entity.Entity):
         self.netxpos = NetworkVar(self, 0, 1, True)
         self.netypos = NetworkVar(self, 0, 2, True)
         self.netangle = NetworkVar(self, 0, 3, True)
-        self.image = pg.image.load("sprites/car.png")
+        self.orgimage = pg.image.load("sprites/car.png")
+        self.rotimage = self.orgimage.copy()
 
     def update(self, data_table):
         self.apply_data_table(data_table)
@@ -173,7 +174,10 @@ class CPlayer(entity.Entity):
         x__ = 5*math.cos(ang)
         y__ = 5*math.sin(ang)
 
+        deg = ang * 180/math.pi
+
         #pg.draw.rect(screen, (0, 150, 0), rectangle)
-        screen.blit(self.image, [self.netxpos.var, self.netypos.var])
+        self.rotimage = pg.transform.rotate(self.orgimage, deg)
+        screen.blit(self.rotimage, [self.netxpos.var, self.netypos.var])
         pg.draw.line(screen, (0, 255, 0), (self.netxpos.var, self.netypos.var), (x__+self.netxpos.var, y__+self.netypos.var))
         return rectangle
