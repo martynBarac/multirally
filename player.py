@@ -23,8 +23,8 @@ class Player(entity.Entity):
         self.netangle.quantise = 3
         self.xpos = x
         self.ypos = y
-        self.w = 16
-        self.h = 16
+        self.w = CAR_SIZE
+        self.h = CAR_SIZE
         self.xvel = 0
         self.yvel = 0
 
@@ -162,7 +162,8 @@ class CPlayer(entity.Entity):
         self.netxpos = NetworkVar(self, 0, 1, True)
         self.netypos = NetworkVar(self, 0, 2, True)
         self.netangle = NetworkVar(self, 0, 3, True)
-        self.orgimage = pg.image.load("sprites/car.png")
+        self.orgimage = pg.image.load("sprites/car.png").convert_alpha()
+        self.orgimage.fill((255, 255, 0), None, pg.BLEND_MULT)
         self.rotimage = self.orgimage.copy()
 
 
@@ -179,11 +180,11 @@ class CPlayer(entity.Entity):
 
         #pg.draw.rect(screen, (0, 150, 0), rectangle)
         self.rotimage = pg.transform.rotate(self.orgimage, deg)
-        self.rotimage.set_colorkey((255, 0, 255))
+        #self.rotimage.set_colorkey((255, 0, 255))
 
         width = self.rotimage.get_rect().width
-        drawx = self.netxpos.var - (width-16)/2
-        drawy = self.netypos.var - (width-16)/2
+        drawx = self.netxpos.var - (width-CAR_SIZE)/2
+        drawy = self.netypos.var - (width-CAR_SIZE)/2
 
         screen.blit(self.rotimage, [drawx, drawy])
         pg.draw.line(screen, (0, 255, 0), (self.netxpos.var, self.netypos.var), (x__+self.netxpos.var, y__+self.netypos.var))
