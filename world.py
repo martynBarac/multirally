@@ -11,6 +11,7 @@ class World:
         self.dt = 1
         self.snapshots = [] # Holds entdicts from last 10 frames [oldest frame, ..., newest frame]
         self.create_ents = [] # a list of any ents that were created
+        self.delete_ents = [] # a list of ents that need to be deleted
 
     def add_new_player(self, client, name, spawnx, spawny, spawnang):
         new_player = Player(spawnx, spawny, spawnang, name)
@@ -34,7 +35,8 @@ class World:
         self.entdict[key] = entity
 
     def destroy_entity(self, _id):
-        del(self.entdict[_id])
+        self.delete_ents.append(_id)
+        #del(self.entdict[_id])
         self.entdict[_id] = None
 
     def update_existing_entity(self, entid, newent):
@@ -64,24 +66,29 @@ class World:
 
         for _id in self.entdict:
             ent = self.entdict[_id]
-            if type(ent) == Player:
-                client = self.player_table[ent]
-                if client in client_input_table:
-                    actions = client_input_table[client]
+            if ent != None:
+                if type(ent) == Player:
+                    client = self.player_table[ent]
+                    if client in client_input_table:
+                        actions = client_input_table[client]
+                    else:
+                        actions = {'1': False, '2': False, '3': False, '4': False}
+                    ent_data_table = ent.update(self, actions)
                 else:
-                    actions = {'1': False, '2': False, '3': False, '4': False}
-                ent_data_table = ent.update(self, actions)
-            else:
-                ent_data_table = ent.update(self)
-                if ent.ent_destroyed:
-                    self.destroy_entity(_id)
+                    ent_data_table = ent.update(self)
+                    if ent.ent_destroyed:
+                        self.destroy_entity(_id)
 
-            if ent.updated:
-                data_table[_id] = ent_data_table
-                ent.updated = False
+                if ent.updated:
+                    data_table[_id] = ent_data_table
+                    ent.updated = False
 
         if self.create_ents:
             data_table["NEW"] = self.create_ents
             self.create_ents = []
+
+        if self.delete_ents:
+            data_table["DEL"] = self.delete_ents
+            self.delete_ents = []
 
         return data_table
