@@ -6,6 +6,7 @@ class NetworkVar:
         self.ent = ent
         self.updated = True
         self.lerp = lerp
+        self.quantise = 0
 
         ent.data_table[_id] = self
 

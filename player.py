@@ -17,6 +17,8 @@ class Player(entity.Entity):
         self.name = NetworkVar(self, name, 0)
         self.netxpos = NetworkVar(self, x, 1)
         self.netypos = NetworkVar(self, y, 2)
+        self.netangle = NetworkVar(self, y, 3)
+        self.netangle.quantise = 3
         self.xpos = x
         self.ypos = y
         self.w = 16
@@ -119,6 +121,7 @@ class Player(entity.Entity):
 
         self.netxpos.set(self.xpos, True)
         self.netypos.set(self.ypos, True)
+        self.netangle.set(self.angle, True)
         return self.prepare_data_table()
 
     def rect_col(self, rect1, rect2):
@@ -156,11 +159,17 @@ class CPlayer(entity.Entity):
         self.name = NetworkVar(self, "", 0)
         self.netxpos = NetworkVar(self, 0, 1, True)
         self.netypos = NetworkVar(self, 0, 2, True)
+        self.netangle = NetworkVar(self, 0, 3, True)
 
     def update(self, data_table):
         self.apply_data_table(data_table)
 
     def draw(self, pg, screen):
         rectangle = pg.Rect(self.netxpos.var, self.netypos.var, 16, 16)
+        ang = self.netangle.var
+        x__ = 5*math.cos(ang)
+        y__ = 5*math.sin(ang)
+
         pg.draw.rect(screen, (0, 150, 0), rectangle)
+        pg.draw.line(screen, (0, 255, 0), (self.netxpos.var, self.netypos.var), (x__+self.netxpos.var, y__+self.netypos.var))
         return rectangle
