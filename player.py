@@ -165,6 +165,7 @@ class CPlayer(entity.Entity):
         self.orgimage = pg.image.load("sprites/car.png")
         self.rotimage = self.orgimage.copy()
 
+
     def update(self, data_table):
         self.apply_data_table(data_table)
 
@@ -178,6 +179,7 @@ class CPlayer(entity.Entity):
 
         #pg.draw.rect(screen, (0, 150, 0), rectangle)
         self.rotimage = pg.transform.rotate(self.orgimage, deg)
+        self.rotimage.set_colorkey((255, 0, 255))
 
         width = self.rotimage.get_rect().width
         drawx = self.netxpos.var - (width-16)/2
