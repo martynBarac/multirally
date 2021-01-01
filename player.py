@@ -178,6 +178,11 @@ class CPlayer(entity.Entity):
 
         #pg.draw.rect(screen, (0, 150, 0), rectangle)
         self.rotimage = pg.transform.rotate(self.orgimage, deg)
-        screen.blit(self.rotimage, [self.netxpos.var, self.netypos.var])
+
+        width = self.rotimage.get_rect().width
+        drawx = self.netxpos.var - (width-16)/2
+        drawy = self.netypos.var - (width-16)/2
+
+        screen.blit(self.rotimage, [drawx, drawy])
         pg.draw.line(screen, (0, 255, 0), (self.netxpos.var, self.netypos.var), (x__+self.netxpos.var, y__+self.netypos.var))
         return rectangle
