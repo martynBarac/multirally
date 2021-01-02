@@ -42,11 +42,16 @@ game_over = False
 old_client_actions = ACTIONS.copy()
 sock.setblocking(0)
 start_time = time.perf_counter()
-
+st = time.perf_counter()
+start_time2 = [st]
+snapshots = []
 
 def do_thing_with_message():
     cf = None
     if msg:
+        st = time.perf_counter()
+        start_time2.append(st)
+        start_time2.pop(0)
         print(msg)
         if 'NEW' in msg:  # Add new ents first to not cause confusion
             for new_ent in msg['NEW']:  # in new message: [[class_id, entity_id], [class_id, entity_id], ...]
@@ -65,8 +70,16 @@ def do_thing_with_message():
             cf = entity_dict[str(msg['CAM'])]
             del (msg['CAM'])
 
-        for _id in msg:
-            entity_dict[_id].apply_data_table(msg[_id])  # Apply all the data we received to the ents
+        snapshots.append(msg)
+        if len(snapshots) > 2:
+            snapshots.pop(0)
+
+    if len(snapshots) >= 2:
+        for _id in snapshots[0]:
+            if _id in snapshots[1]:
+                entity_dict[_id].apply_data_table_lerp((snapshots[0][_id], snapshots[1][_id]), start_time2[0], time.perf_counter())  # Apply all the data we received to the ents
+            else:
+                entity_dict[_id].apply_data_table(snapshots[0][_id])
     return cf
 
 
@@ -119,6 +132,7 @@ while not game_over:
             print("CANCEL")
             my_client.unread_messages = ""
             break
+
 
     # Draw everything
     screen.fill((0, 0, 0))

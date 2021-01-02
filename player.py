@@ -163,7 +163,7 @@ class CPlayer(entity.Entity):
         self.name = NetworkVar(self, "", 0)
         self.netxpos = NetworkVar(self, 0, 1, True)
         self.netypos = NetworkVar(self, 0, 2, True)
-        self.netangle = NetworkVar(self, 0, 3, True)
+        self.netangle = NetworkVar(self, 0, 3)
         self.orgimage = pg.image.load("sprites/car.png").convert_alpha()
         self.orgimage.fill((255, 255, 0), None, pg.BLEND_MULT)
         self.rotimage = self.orgimage.copy()

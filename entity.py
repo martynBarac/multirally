@@ -43,3 +43,20 @@ class Entity:
             self.data_table[__id].var = datatable_to_receive[_id]
             # print(self.data_table[__id].var)
 
+    def apply_data_table_lerp(self, snapshots, starttime, curtime):
+        for _id in snapshots[0]:
+            __id = int(_id)
+            if self.data_table[__id].lerp and _id in snapshots[1]:
+                # Lerp from https://en.wikipedia.org/wiki/Linear_interpolation
+                y0 = snapshots[0][_id]
+                y1 = snapshots[1][_id]
+                x0 = starttime
+                x1 = starttime+0.1 # 0.1 interp time
+                x = curtime
+
+                numerator = y0*(x1-x)+y1*(x-x0)
+                denominator = x1 - x0
+                self.data_table[__id].var = numerator/denominator
+            else:
+                self.data_table[__id].var = snapshots[0][_id]
+
