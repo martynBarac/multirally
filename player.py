@@ -55,9 +55,9 @@ class Player(entity.Entity):
         if actions[DOWNARROW]:
             throttle = -self.engine_power/2
         if actions[LEFTARROW]:
-            self.angle += 0.1
+            self.angle += 0.1*dt
         if actions[RIGHTARROW]:
-            self.angle -= 0.1
+            self.angle -= 0.1*dt
 
         maxfric = 0.5
 

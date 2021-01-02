@@ -50,7 +50,7 @@ msg = None
 def do_thing_with_message():
     cf = None
     if msg:
-        print(msg)
+        # print(msg)
         st = time.perf_counter()
         start_time2.append(st)
         start_time2.pop(0)
