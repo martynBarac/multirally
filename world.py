@@ -48,7 +48,8 @@ class World:
     def get_camera_for_player(self, client):
         for player in self.player_table:
             if self.player_table[player] == client:
-                return {"CAM":player._id}
+                print("GOT CAM")
+                return player._id
 
     def send_entire_gamestate(self):
         data_table = {}

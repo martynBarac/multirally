@@ -42,6 +42,34 @@ game_over = False
 old_client_actions = ACTIONS.copy()
 sock.setblocking(0)
 start_time = time.perf_counter()
+
+
+def do_thing_with_message():
+    cf = None
+    if msg:
+        print(msg)
+        if 'NEW' in msg:  # Add new ents first to not cause confusion
+            for new_ent in msg['NEW']:  # in new message: [[class_id, entity_id], [class_id, entity_id], ...]
+                entity_dict[str(new_ent[1])] = entity_table.entity_table[new_ent[0]][1]()
+                print("Created new entity", entity_dict[str(new_ent[1])])
+            del (msg['NEW'])  # Delete the "NEW" stuff because we don't need it ever again
+
+        if 'DEL' in msg:
+            for _id in msg['DEL']:
+                print("Deleted entity", entity_dict[str(_id)])
+                del (entity_dict[str(_id)])
+            del (msg['DEL'])
+
+        # This way of doing the camera should be changed to save bandwidth
+        if 'CAM' in msg:
+            cf = entity_dict[str(msg['CAM'])]
+            del (msg['CAM'])
+
+        for _id in msg:
+            entity_dict[_id].apply_data_table(msg[_id])  # Apply all the data we received to the ents
+    return cf
+
+
 while not game_over:
     # Handle client inputs
     for event in pg.event.get():
@@ -69,28 +97,28 @@ while not game_over:
         msg = my_client.receive_msg()
     except BlockingIOError:
         msg = None
+    data = do_thing_with_message()
+    if data is not None:
+        camfollowing = data
 
-    if msg:
-        if 'NEW' in msg:     # Add new ents first to not cause confusion
-            for new_ent in msg['NEW']: # in new message: [[class_id, entity_id], [class_id, entity_id], ...]
-                entity_dict[str(new_ent[1])] = entity_table.entity_table[new_ent[0]][1]()
-                print("Created new entity", entity_dict[str(new_ent[1])])
+    i = 0
+    while len(my_client.unread_messages) != 0:
 
-            del(msg['NEW'])  # Delete the "NEW" stuff because we don't need it ever again
+        data = do_thing_with_message()
+        if data is not None:
+            camfollowing = data
 
-        if 'DEL' in msg:
-            for id in msg['DEL']:
-                print("Deleted entity", entity_dict[str(id)])
-                del(entity_dict[str(id)])
-            del(msg['DEL'])
+        try:
+            msg = my_client.receive_msg()
+        except BlockingIOError:
+            msg = None
+        i = i+1
 
-        # This way of doing the camera should be changed to save bandwidth
-        if 'CAM' in msg:
-            camfollowing = entity_dict[str(msg['CAM'])]
-            del (msg['CAM'])
-
-        for _id in msg:
-            entity_dict[_id].apply_data_table(msg[_id])  # Apply all the data we received to the ents
+        # If we cant keep up with all the messages then just discard some
+        if i > 5000:
+            print("CANCEL")
+            my_client.unread_messages = ""
+            break
 
     # Draw everything
     screen.fill((0, 0, 0))
@@ -104,3 +132,5 @@ while not game_over:
 
     dt = clock.tick(FRAMERATE/2)
     pg.display.update()
+
+
