@@ -40,11 +40,19 @@ class Server:
                 self.new_clients.append(conn)
                 print(addr, "Connected!")
             else:
-                msg = self.network_dict[s].receive_msg() # Get the client inputs
-                self.client_input_table[s] = msg
-                messages = self.network_dict[s].read_unread_messages() # Get more if the client sent lots at a time
-                for message in messages:
-                    self.client_input_table[s] = message
+                try:
+                    msg = self.network_dict[s].receive_msg() # Get the client inputs
+                    self.client_input_table[s] = msg
+                    messages = self.network_dict[s].read_unread_messages() # Get more if the client sent lots at a time
+                    for message in messages:
+                        self.client_input_table[s] = message
+                except ConnectionResetError:
+                    del(self.network_dict[s])
+                    self.maybe_readable.remove(s)
+                    self.maybe_writeable.remove(s)
+                    writeable.remove(s)
+                    self.world.destroy_player(s)
+
 
         for s in writeable:
             if s in self.new_clients:

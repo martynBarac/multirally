@@ -173,8 +173,9 @@ class CPlayer(entity.CEntity):
     def update(self):
         if self.netcolour.var != self.colour:
             self.colour = self.netcolour.var
+            self.orgimage = pg.image.load("sprites/car.png").convert_alpha()
             self.orgimage.fill(self.colour, None, pg.BLEND_MULT)
-            print("CHANGE!")
+            print("CHANGE!", self.netcolour.var)
 
     def draw(self, pg, screen, cam):
         rectangle = pg.Rect(self.netxpos.var, self.netypos.var, 16, 16)

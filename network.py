@@ -54,8 +54,14 @@ class Network:
 
         if msg == self.unread_messages:
             self.unread_messages = ""
-        msg = json.loads(msg)
-        return msg
+        try:
+            msg2 = json.loads(msg)
+        except json.decoder.JSONDecodeError:
+            self.unread_messages=msg+self.unread_messages
+            msg2 = None
+            print("JSONERRORRV:", msg)
+            print(self.unread_messages)
+        return msg2
 
     def read_unread_messages(self):
         msg = self.unread_messages
@@ -69,8 +75,12 @@ class Network:
                     msg = self.unread_messages
                     continue
         if self.unread_messages:
-            msg_list.append(json.loads(self.unread_messages))
-            self.unread_messages = ""
+            try:
+                msg_list.append(json.loads(self.unread_messages))
+                self.unread_messages = ""
+            except json.decoder.JSONDecodeError:
+                print("JSONERRORUR:", self.unread_messages)
+
         return msg_list
 
     def send_msg(self, message):

@@ -47,6 +47,7 @@ start_time2 = [st]
 snapshots = []
 msg = None
 
+
 def do_thing_with_message():
     cf = None
     if msg:
@@ -80,7 +81,10 @@ def do_thing_with_message():
             if _id in snapshots[1]:
                 entity_dict[_id].apply_data_table_lerp((snapshots[0][_id], snapshots[1][_id]), start_time2[0], time.perf_counter())  # Apply all the data we received to the ents
             else:
-                entity_dict[_id].apply_data_table(snapshots[0][_id])
+                try:
+                    entity_dict[_id].apply_data_table(snapshots[0][_id])
+                except KeyError:
+                    pass
     else:
         if msg:
             for _id in msg:
@@ -120,25 +124,12 @@ while not game_over:
     if data is not None:
         camfollowing = data
 
-    i = 0
-    while len(my_client.unread_messages) != 0:
-
+    msgs = my_client.read_unread_messages()
+    for msg in msgs:
         data = do_thing_with_message()
         if data is not None:
             camfollowing = data
-
-        try:
-            msg = my_client.receive_msg()
-        except BlockingIOError:
-            msg = None
-        i = i+1
-
-        # If we cant keep up with all the messages then just discard some
-        if i > 5000:
-            print("CANCEL")
-            my_client.unread_messages = ""
-            break
-
+        print("yea")
 
     # Draw everything
     screen.fill((0, 0, 0))
@@ -151,7 +142,7 @@ while not game_over:
     for wall in lvl0:
         pg.draw.rect(screen, (255, 255, 255), [wall[0]-cam[0], wall[1]-cam[1], 32, 32])
 
-    dt = clock.tick(FRAMERATE)
+    dt = clock.tick(FRAMERATE/2)
     pg.display.update()
 
 

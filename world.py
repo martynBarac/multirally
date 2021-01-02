@@ -19,8 +19,15 @@ class World:
         self.add_new_entity(new_player)
         self.player_table[new_player] = client
 
-    def add_new_entity(self, entity):
+    def destroy_player(self, client):
+        for player in self.player_table:
+            if self.player_table[player] == client:
+                self.destroy_entity(player._id)
+                del(self.entdict[player._id])
+                del(self.player_table[player])
+                return None
 
+    def add_new_entity(self, entity):
         key = None
         # Find next untaken id
         for i in range(1000):
