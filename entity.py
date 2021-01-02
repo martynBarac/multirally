@@ -60,3 +60,11 @@ class Entity:
             else:
                 self.data_table[__id].var = snapshots[0][_id]
 
+
+class CEntity(Entity):
+    def __init__(self):
+        Entity.__init__(self)
+
+    def update(self):
+        pass
+

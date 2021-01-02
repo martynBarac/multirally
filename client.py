@@ -45,14 +45,15 @@ start_time = time.perf_counter()
 st = time.perf_counter()
 start_time2 = [st]
 snapshots = []
+msg = None
 
 def do_thing_with_message():
     cf = None
     if msg:
+        print(msg)
         st = time.perf_counter()
         start_time2.append(st)
         start_time2.pop(0)
-        print(msg)
         if 'NEW' in msg:  # Add new ents first to not cause confusion
             for new_ent in msg['NEW']:  # in new message: [[class_id, entity_id], [class_id, entity_id], ...]
                 entity_dict[str(new_ent[1])] = entity_table.entity_table[new_ent[0]][1]()
@@ -80,6 +81,11 @@ def do_thing_with_message():
                 entity_dict[_id].apply_data_table_lerp((snapshots[0][_id], snapshots[1][_id]), start_time2[0], time.perf_counter())  # Apply all the data we received to the ents
             else:
                 entity_dict[_id].apply_data_table(snapshots[0][_id])
+    else:
+        if msg:
+            for _id in msg:
+                entity_dict[_id].apply_data_table(msg[_id])
+
     return cf
 
 
@@ -101,7 +107,6 @@ while not game_over:
         client_actions[DOWNARROW] = True
 
     if client_actions != old_client_actions and time.perf_counter() - start_time > 0.1:
-        print(client_actions)
         my_client.send_msg(client_actions)
         start_time = time.perf_counter()
         old_client_actions = client_actions.copy()
@@ -110,6 +115,7 @@ while not game_over:
         msg = my_client.receive_msg()
     except BlockingIOError:
         msg = None
+
     data = do_thing_with_message()
     if data is not None:
         camfollowing = data
@@ -137,6 +143,7 @@ while not game_over:
     # Draw everything
     screen.fill((0, 0, 0))
     for _id in entity_dict:
+        entity_dict[_id].update()
         if camfollowing:
             cam = (camfollowing.netxpos.var-SCREEN_WIDTH//2, camfollowing.netypos.var-SCREEN_HEIGHT//2)
         entity_dict[_id].draw(pg, screen, cam)

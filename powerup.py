@@ -30,9 +30,9 @@ class Powerup(entity.Entity):
         return self.prepare_data_table()
 
 
-class CPowerup(entity.Entity):
+class CPowerup(entity.CEntity):
     def __init__(self):
-        entity.Entity.__init__(self)
+        entity.CEntity.__init__(self)
         self.xpos = NetworkVar(self, 0, 1)
         self.ypos = NetworkVar(self, 0, 2)
         self.type = NetworkVar(self, 0, 0)

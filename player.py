@@ -23,6 +23,7 @@ class Player(entity.Entity):
         self.netypos.quantise = 0
         self.netangle = NetworkVar(self, y, 3)
         self.netangle.quantise = 3
+        self.netcolour = NetworkVar(self, (255, 255, 0), 4)
         self.xpos = x
         self.ypos = y
         self.w = CAR_SIZE
@@ -156,21 +157,24 @@ class Player(entity.Entity):
         return False
 
 
-class CPlayer(entity.Entity):
+class CPlayer(entity.CEntity):
 
     def __init__(self):
-        entity.Entity.__init__(self)
+        entity.CEntity.__init__(self)
         self.name = NetworkVar(self, "", 0)
         self.netxpos = NetworkVar(self, 0, 1, True)
         self.netypos = NetworkVar(self, 0, 2, True)
         self.netangle = NetworkVar(self, 0, 3)
+        self.netcolour = NetworkVar(self, (0, 0, 0), 4)
         self.orgimage = pg.image.load("sprites/car.png").convert_alpha()
-        self.orgimage.fill((255, 255, 0), None, pg.BLEND_MULT)
+        self.colour = (128, 128, 128)
         self.rotimage = self.orgimage.copy()
 
-
-    def update(self, data_table):
-        self.apply_data_table(data_table)
+    def update(self):
+        if self.netcolour.var != self.colour:
+            self.colour = self.netcolour.var
+            self.orgimage.fill(self.colour, None, pg.BLEND_MULT)
+            print("CHANGE!")
 
     def draw(self, pg, screen, cam):
         rectangle = pg.Rect(self.netxpos.var, self.netypos.var, 16, 16)
