@@ -57,6 +57,22 @@ class Network:
         msg = json.loads(msg)
         return msg
 
+    def read_unread_messages(self):
+        msg = self.unread_messages
+        msg_list= []
+        for i in range(len(msg)):
+            if i + 1 < len(msg):
+                if msg[i] + msg[i + 1] == "}{":
+                    msg = self.unread_messages[:i + 1]
+                    msg_list.append(json.loads(msg))
+                    self.unread_messages = self.unread_messages[i + 1:]
+                    msg = self.unread_messages
+                    continue
+        if self.unread_messages:
+            msg_list.append(json.loads(self.unread_messages))
+            self.unread_messages = ""
+        return msg_list
+
     def send_msg(self, message):
         msg_json = json.dumps(message)
         msg_bytes = msg_json.encode()

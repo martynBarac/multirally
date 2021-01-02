@@ -41,7 +41,7 @@ def server_test():
     my_server.world.add_new_entity(Powerup(128, 128, 0))
     while True:
         my_server.update()
-        time.sleep(1/10)
+        time.sleep(1/15)
 
 
 def client_test():

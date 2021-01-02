@@ -106,7 +106,7 @@ while not game_over:
     if keyboard_inputs[pg.K_DOWN]:
         client_actions[DOWNARROW] = True
 
-    if client_actions != old_client_actions and time.perf_counter() - start_time > 0.1:
+    if client_actions != old_client_actions and time.perf_counter() - start_time > 0.01:
         my_client.send_msg(client_actions)
         start_time = time.perf_counter()
         old_client_actions = client_actions.copy()
@@ -151,7 +151,7 @@ while not game_over:
     for wall in lvl0:
         pg.draw.rect(screen, (255, 255, 255), [wall[0]-cam[0], wall[1]-cam[1], 32, 32])
 
-    dt = clock.tick(FRAMERATE/2)
+    dt = clock.tick(FRAMERATE)
     pg.display.update()
 
 

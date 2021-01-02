@@ -48,10 +48,11 @@ class Entity:
             __id = int(_id)
             if self.data_table[__id].lerp and _id in snapshots[1]:
                 # Lerp from https://en.wikipedia.org/wiki/Linear_interpolation
+                interp_time = 1/15
                 y0 = snapshots[0][_id]
                 y1 = snapshots[1][_id]
                 x0 = starttime
-                x1 = starttime+0.1 # 0.1 interp time
+                x1 = starttime+interp_time # interp time
                 x = curtime
 
                 numerator = y0*(x1-x)+y1*(x-x0)
