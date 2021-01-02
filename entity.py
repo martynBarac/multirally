@@ -26,7 +26,9 @@ class Entity:
 
             # If the netvar is updated add it to the table to send
             if netvar.updated or send_everything:
-                if netvar.quantise:
+                if netvar.quantise == 0:
+                    datatable_to_send[_id] = int(netvar.var)
+                elif netvar.quantise != -1:
                     datatable_to_send[_id] = round(netvar.var, netvar.quantise)
                 else:
                     datatable_to_send[_id] = netvar.var
