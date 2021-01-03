@@ -70,8 +70,12 @@ class Network:
             if i + 1 < len(msg):
                 if msg[i] + msg[i + 1] == "}{":
                     msg = self.unread_messages[:i + 1]
-                    msg_list.append(json.loads(msg))
-                    self.unread_messages = self.unread_messages[i + 1:]
+                    try:
+                        msg_list.append(json.loads(msg))
+                        self.unread_messages = self.unread_messages[i + 1:]
+                    except json.decoder.JSONDecodeError:
+                        print("JsonerrorSUM", msg)
+                        pass
                     msg = self.unread_messages
                     continue
         if self.unread_messages:
@@ -213,13 +217,13 @@ def encode_powerup_data(powerups):
         powmsg.append(x)
         powmsg.append(y)
         powmsg.append(typ)
-        
+
     return list_to_bytes(powmsg)
-        
+
 def decode_powerup_data(msg):
     decoded = []
     powdict = {} # A single item will look like id:[x, y, type]
-    
+
     for att in msg[1:]:
         att = att.split("/")
         idd = att[0] # an id is used for each attribute so the order of the list doesnt matter
@@ -232,7 +236,7 @@ def decode_powerup_data(msg):
             powdict[idd][2] = int(att[1][1:])
     for po in powdict.values():
         decoded.append(Powerup(po[0], po[1], po[2]))
-        
+
     return decoded
 
 
