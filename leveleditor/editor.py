@@ -1,5 +1,11 @@
 import pygame as pg
 
+from tkinter import filedialog, Tk
+
+root = Tk()
+root.withdraw()
+
+
 SCREEN_SIZE = (640, 480)
 
 pg.init()
@@ -30,6 +36,8 @@ class Editor:
         pass
 
     def save_level(self):
+
+
         to_save = self.level
         # Remove all None elements of list
         i = 0
@@ -39,9 +47,12 @@ class Editor:
                 i -= 1
             i += 1
         # Save to file
-        with open("new_level.py", "w") as file:
-            file.write("level0 = " + str(to_save))
-        print("level saved!")
+        file = filedialog.asksaveasfile(initialdir=".")
+        if file:
+            file.write("level = " + str(to_save))
+            file.close()
+            print("level saved!")
+
 
     def run(self):
         while self.running:
