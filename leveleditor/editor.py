@@ -44,9 +44,10 @@ class Editor:
         new_selection = -1
         selected = False
         for i in range(len(self.level)):
-            if self.box_col(self.level[i], x, y):
-                selected = True
-                new_selection = i
+            if self.level[i] != None:
+                if self.box_col(self.level[i], x, y):
+                    selected = True
+                    new_selection = i
 
         self.selection = new_selection
         return selected
@@ -58,9 +59,16 @@ class Editor:
 
     def add_box(self, xy1, xy2):
 
+
         box = self.get_box(xy1[0], xy1[1], xy2[0], xy2[1])
         # Only add if it has a width and height
         if box[2] > 0 and box[3] > 0:
+            # Check for empty spots first
+            for i in range(len(self.level)):
+                if self.level[i] == None:
+                    self.level[i] = box
+                    return
+            # If there are no empty spots, append a new item
             self.level.append(box)
 
     def get_box(self, x1, y1, x2, y2):
@@ -125,6 +133,11 @@ class Editor:
                 elif event.button == 3:
                     self.dragging = False
 
+            elif event.type == pg.KEYDOWN:
+                if event.key == pg.K_DELETE:
+                    self.level[self.selection] = None
+                    self.selection = -1
+
     def draw(self):
         screen.fill((0, 0, 0))
         # Draw box outline when drawing a box
@@ -133,7 +146,8 @@ class Editor:
             pg.draw.rect(screen, (128, 128, 128), self.get_box(self.box_start[0], self.box_start[1], mouse[0], mouse[1]), 2)
         # Draw level
         for box in self.level:
-            pg.draw.rect(screen, (255, 255, 255), box)
+            if box != None:
+                pg.draw.rect(screen, (255, 255, 255), box)
         # Draw grid
         for x in range(0, SCREEN_SIZE[0], self.gridsize):
             pg.draw.line(screen, (20, 20, 20), [x, 0], [x, SCREEN_SIZE[1]], 1)
