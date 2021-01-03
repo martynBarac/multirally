@@ -30,7 +30,18 @@ class Editor:
         pass
 
     def save_level(self):
-        pass
+        to_save = self.level
+        # Remove all None elements of list
+        i = 0
+        while i < len(to_save):
+            if to_save[i] == None:
+                to_save.pop(i)
+                i -= 1
+            i += 1
+        # Save to file
+        with open("new_level.py", "w") as file:
+            file.write("level0 = " + str(to_save))
+        print("level saved!")
 
     def run(self):
         while self.running:
@@ -177,6 +188,8 @@ class Editor:
                     self.gridsize /= 2
                 elif event.key == pg.K_LEFTBRACKET:
                     self.gridsize *= 2
+                elif event.key == pg.K_s and event.mod&pg.KMOD_CTRL:
+                    self.save_level()
 
     def screen_pos_to_cam(self, pos):
         return ((pos[0]-self.cam[0]) * self.zoom, (pos[1]-self.cam[1]) * self.zoom)
