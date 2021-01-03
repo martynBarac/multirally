@@ -1,12 +1,18 @@
 import pygame as pg
 
+SCREEN_SIZE = (640, 480)
+
+pg.init()
+screen = pg.display.set_mode(SCREEN_SIZE)
+
 class Editor:
     def __init__(self):
         pg.init()
         self.level = []
         self.box_start = (0, 0)
         self.drawing = False
-
+        self.selection = -1
+        self.running = True
 
     def load_level(self):
         pass
@@ -15,12 +21,26 @@ class Editor:
         pass
 
     def run(self):
-        self.event_handle()
-        self.update()
-        self.draw()
+        while self.running:
+            self.event_handle()
+            self.update()
+            self.draw()
 
     def update(self):
         pass
+
+    def select(self, x, y):
+        new_selection = -1
+        for i in range(len(self.level)):
+            if self.box_col(self.level[i], x, y):
+                if self.selection != i:
+                    new_selection = i
+        self.selection = new_selection
+
+    def box_col(self, rect, x, y):
+        if x < rect[0]+rect[2] and x > rect[0] and y > rect[1] and y < rect[1]+rect[3]:
+            return True
+        return False
 
     def add_box(self, x1, y1, x2, y2):
 
@@ -48,25 +68,38 @@ class Editor:
     def event_handle(self):
         for event in  pg.event.get():
             if event.type == pg.QUIT:
-                pg.quit()
+                self.running = False
+
             elif event.type == pg.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     self.box_start = pg.mouse.get_pos()
                     self.drawing = True
+                if event.button == 3:
+                    mouse = pg.mouse.get_pos()
+                    self.select(mouse[0], mouse[1])
+
             elif event.type == pg.MOUSEBUTTONUP:
                 if event.button == 1:
                     self.drawing = False
                     box_end = pg.mouse.get_pos()
                     self.add_box(self.box_start[0], self.box_start[1], box_end[0], box_end[1])
 
-    def draw(self, screen):
+    def draw(self):
         screen.fill((0, 0, 0))
-
+        # Draw box outline when drawing a box
         if self.drawing:
             mouse = pg.mouse.get_pos()
             pg.draw.rect(screen, (128, 128, 128), self.get_box(self.box_start[0], self.box_start[1], mouse[0], mouse[1]), 2)
-
+        # Draw level
         for box in self.level:
             pg.draw.rect(screen, (255, 255, 255), box)
+        # Draw selection box
+        if self.selection != -1:
+            pg.draw.rect(screen, (0, 255, 0), self.level[self.selection], 2)
+
         pg.display.update()
 
+if __name__ == "__main__":
+    e = Editor()
+    e.run()
+    pg.quit()
