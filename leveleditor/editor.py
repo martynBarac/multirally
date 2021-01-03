@@ -14,6 +14,11 @@ class Editor:
         self.selection = -1
         self.running = True
 
+        self.dragging = False
+        self.drag_mouse_start = (0, 0) # Mouse pos when start dragging
+        self.drag_box_start = (0, 0) # Box pos when start dragging
+
+
     def load_level(self):
         pass
 
@@ -27,15 +32,22 @@ class Editor:
             self.draw()
 
     def update(self):
-        pass
+        if self.dragging:
+            mouse = pg.mouse.get_pos()
+            self.level[self.selection][0] = self.drag_box_start[0] - (self.drag_mouse_start[0] - mouse[0])
+            self.level[self.selection][1] = self.drag_box_start[1] - (self.drag_mouse_start[1] - mouse[1])
+
 
     def select(self, x, y):
         new_selection = -1
+        selected = False
         for i in range(len(self.level)):
             if self.box_col(self.level[i], x, y):
-                if self.selection != i:
-                    new_selection = i
+                selected = True
+                new_selection = i
+
         self.selection = new_selection
+        return selected
 
     def box_col(self, rect, x, y):
         if x < rect[0]+rect[2] and x > rect[0] and y > rect[1] and y < rect[1]+rect[3]:
@@ -74,15 +86,20 @@ class Editor:
                 if event.button == 1:
                     self.box_start = pg.mouse.get_pos()
                     self.drawing = True
-                if event.button == 3:
+                elif event.button == 3:
                     mouse = pg.mouse.get_pos()
-                    self.select(mouse[0], mouse[1])
+                    if self.select(mouse[0], mouse[1]):
+                        self.dragging = True
+                        self.drag_mouse_start = mouse
+                        self.drag_box_start = self.level[self.selection][:2]
 
             elif event.type == pg.MOUSEBUTTONUP:
                 if event.button == 1:
                     self.drawing = False
                     box_end = pg.mouse.get_pos()
                     self.add_box(self.box_start[0], self.box_start[1], box_end[0], box_end[1])
+                elif event.button == 3:
+                    self.dragging = False
 
     def draw(self):
         screen.fill((0, 0, 0))
