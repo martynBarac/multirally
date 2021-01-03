@@ -40,9 +40,10 @@ class Editor:
 
     def update(self):
         if self.dragging:
-            mouse = self.pos_to_grid(self.get_mouse())
+            mouse = self.get_mouse()
             self.level[self.selection][0] = self.drag_box_start[0] - (self.drag_mouse_start[0] - mouse[0])
             self.level[self.selection][1] = self.drag_box_start[1] - (self.drag_mouse_start[1] - mouse[1])
+            self.level[self.selection][0], self.level[self.selection][1] = self.pos_to_grid(self.level[self.selection])
 
         if self.dragging_cam:
             mouse = list(pg.mouse.get_pos())
@@ -172,6 +173,10 @@ class Editor:
                 if event.key == pg.K_DELETE:
                     self.level[self.selection] = None
                     self.selection = -1
+                elif event.key == pg.K_RIGHTBRACKET:
+                    self.gridsize /= 2
+                elif event.key == pg.K_LEFTBRACKET:
+                    self.gridsize *= 2
 
     def screen_pos_to_cam(self, pos):
         return ((pos[0]-self.cam[0]) * self.zoom, (pos[1]-self.cam[1]) * self.zoom)
