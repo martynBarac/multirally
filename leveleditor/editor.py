@@ -15,10 +15,14 @@ class Editor:
         self.running = True
 
         self.dragging = False
-        self.drag_mouse_start = (0, 0) # Mouse pos when start dragging
-        self.drag_box_start = (0, 0) # Box pos when start dragging
+        self.drag_mouse_start = () # Mouse pos when start dragging
+        self.drag_box_start = () # Box pos when start dragging
+
+        self.cam_drag_start = ()
+        self.dragging_cam = False
 
         self.gridsize = 32
+        self.cam = [0, 0]
 
 
     def load_level(self):
@@ -35,9 +39,19 @@ class Editor:
 
     def update(self):
         if self.dragging:
-            mouse = self.pos_to_grid(pg.mouse.get_pos())
+            mouse = self.pos_to_grid(self.get_mouse())
             self.level[self.selection][0] = self.drag_box_start[0] - (self.drag_mouse_start[0] - mouse[0])
             self.level[self.selection][1] = self.drag_box_start[1] - (self.drag_mouse_start[1] - mouse[1])
+
+        if self.dragging_cam:
+            mouse = list(pg.mouse.get_pos())
+
+            #mouse[0] -= self.cam_drag_start[0]
+            #mouse[1] -= self.cam_drag_start[1]
+
+            self.cam[0] += mouse[0] - self.cam_drag_start[0]
+            self.cam[1] += mouse[1] - self.cam_drag_start[1]
+            self.cam_drag_start = mouse
 
 
     def select(self, x, y):
@@ -109,6 +123,10 @@ class Editor:
 
         return [newx, newy]
 
+    def get_mouse(self):
+        mouse = pg.mouse.get_pos()
+        return (mouse[0]-self.cam[0], mouse[1]-self.cam[1])
+
     def event_handle(self):
         for event in  pg.event.get():
             if event.type == pg.QUIT:
@@ -116,10 +134,15 @@ class Editor:
 
             elif event.type == pg.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    self.box_start = self.pos_to_grid(pg.mouse.get_pos())
+                    self.box_start = self.pos_to_grid(self.get_mouse())
                     self.drawing = True
+
+                elif event.button == 2:
+                    self.cam_drag_start = pg.mouse.get_pos()
+                    self.dragging_cam = True
+
                 elif event.button == 3:
-                    mouse = pg.mouse.get_pos()
+                    mouse = self.get_mouse()
                     if self.select(mouse[0], mouse[1]):
                         self.dragging = True
                         self.drag_mouse_start = self.pos_to_grid(mouse)
@@ -128,8 +151,12 @@ class Editor:
             elif event.type == pg.MOUSEBUTTONUP:
                 if event.button == 1:
                     self.drawing = False
-                    box_end = self.pos_to_grid(pg.mouse.get_pos())
+                    box_end = self.pos_to_grid(self.get_mouse())
                     self.add_box(self.box_start, box_end)
+
+                elif event.button == 2:
+                    self.dragging_cam = False
+
                 elif event.button == 3:
                     self.dragging = False
 
@@ -138,25 +165,33 @@ class Editor:
                     self.level[self.selection] = None
                     self.selection = -1
 
+    def screen_pos_to_cam(self, pos):
+        return (pos[0]+self.cam[0], pos[1]+self.cam[1])
+
+    def screen_box_to_cam(self, box):
+        return [box[0]+self.cam[0], box[1]+self.cam[1], box[2], box[3]]
+
     def draw(self):
         screen.fill((0, 0, 0))
         # Draw box outline when drawing a box
         if self.drawing:
-            mouse = self.pos_to_grid(pg.mouse.get_pos())
-            pg.draw.rect(screen, (128, 128, 128), self.get_box(self.box_start[0], self.box_start[1], mouse[0], mouse[1]), 2)
+            mouse = self.pos_to_grid(self.get_mouse())
+            pg.draw.rect(screen, (128, 128, 128), self.screen_box_to_cam( self.get_box(self.box_start[0], self.box_start[1], mouse[0], mouse[1])) , 2)
         # Draw level
         for box in self.level:
             if box != None:
-                pg.draw.rect(screen, (255, 255, 255), box)
+                pg.draw.rect(screen, (255, 255, 255), self.screen_box_to_cam(box))
         # Draw grid
         for x in range(0, SCREEN_SIZE[0], self.gridsize):
+            x += self.cam[0] % self.gridsize
             pg.draw.line(screen, (20, 20, 20), [x, 0], [x, SCREEN_SIZE[1]], 1)
             for y in range(0, SCREEN_SIZE[1], self.gridsize):
+                y += self.cam[1] % self.gridsize
                 pg.draw.line(screen, (20, 20, 20), [0, y], [SCREEN_SIZE[0], y], 1)
 
         # Draw selection box
         if self.selection != -1:
-            pg.draw.rect(screen, (0, 255, 0), self.level[self.selection], 2)
+            pg.draw.rect(screen, (0, 255, 0), self.screen_box_to_cam(self.level[self.selection]), 2)
 
         pg.display.update()
 
