@@ -1,5 +1,5 @@
 import pygame as pg
-
+import json
 from tkinter import filedialog, Tk
 
 root = Tk()
@@ -33,7 +33,14 @@ class Editor:
 
 
     def load_level(self):
-        pass
+        path = filedialog.askopenfilename(initialdir=".")
+        if path:
+            file = open(path, "r")
+            data = file.read()
+            self.level = json.loads(data)
+            file.close()
+            print("loaded", path)
+
 
     def save_level(self):
 
@@ -49,7 +56,7 @@ class Editor:
         # Save to file
         file = filedialog.asksaveasfile(initialdir=".")
         if file:
-            file.write("level = " + str(to_save))
+            file.write(json.dumps(to_save))
             file.close()
             print("level saved!")
 
@@ -201,6 +208,8 @@ class Editor:
                     self.gridsize *= 2
                 elif event.key == pg.K_s and event.mod&pg.KMOD_CTRL:
                     self.save_level()
+                elif event.key == pg.K_l and event.mod&pg.KMOD_CTRL:
+                    self.load_level()
 
     def screen_pos_to_cam(self, pos):
         return ((pos[0]-self.cam[0]) * self.zoom, (pos[1]-self.cam[1]) * self.zoom)
