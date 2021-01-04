@@ -3,9 +3,9 @@ import time
 import math
 from constant import *
 from network import *
-from level import *
 from powerup import *
 import entity_table
+import game
 
 SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 
@@ -46,6 +46,8 @@ st = time.perf_counter()
 start_time2 = [st]
 snapshots = []
 msg = None
+
+lvl0 = game.load_level("level0")
 
 
 def do_thing_with_message():
@@ -140,7 +142,7 @@ while not game_over:
         entity_dict[_id].draw(pg, screen, cam)
 
     for wall in lvl0:
-        pg.draw.rect(screen, (255, 255, 255), [wall[0]-cam[0], wall[1]-cam[1], 32, 32])
+        pg.draw.rect(screen, (255, 255, 255), [wall[0]-cam[0], wall[1]-cam[1], wall[2], wall[3]])
 
     dt = clock.tick(FRAMERATE/2)
     pg.display.update()

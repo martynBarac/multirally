@@ -145,12 +145,12 @@ class Player(entity.Entity):
             y = self.ypos
         walls = []
         if wall:
-            if self.rect_col([x, y, self.w, self.h], [wall[0], wall[1], 32, 32]):
+            if self.rect_col([x, y, self.w, self.h], [wall[0], wall[1], wall[2], wall[3]]):
                 return True
             return False
         else:
             for wall in lvl0:
-                if self.rect_col([x, y, self.w, self.h], [wall[0], wall[1], 32, 32]):
+                if self.rect_col([x, y, self.w, self.h], [wall[0], wall[1], wall[2], wall[3]]):
                     walls.append(wall)
         if walls:
             return walls

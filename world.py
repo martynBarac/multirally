@@ -1,17 +1,21 @@
 from player import Player
 import entity_table
 import random
+import game
 
 class World:
 
-    def __init__(self, level):
+    def __init__(self, level_name):
         self.player_table = {} # Holds all players {Class: client, ...}
         self.entdict = {} # Holds all entities {id: Class}
-        self.walls = level
+        self.walls = game.load_level(level_name)
         self.dt = 1.5
         self.snapshots = [] # Holds entdicts from last 10 frames [oldest frame, ..., newest frame]
         self.create_ents = [] # a list of any ents that were created
         self.delete_ents = [] # a list of ents that need to be deleted
+
+
+
 
     def add_new_player(self, client, name, spawnx, spawny, spawnang):
         new_player = Player(spawnx, spawny, spawnang, name)
