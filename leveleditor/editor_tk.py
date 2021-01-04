@@ -2,10 +2,68 @@ import tkinter as tk
 from tkinter import filedialog
 import json
 
+
+class Grid:
+    def __init__(self, root):
+        self.hlines = []
+        self.vlines = []
+        self.root = root
+        self.root.bind("<Configure>", self.window_resize)
+        self.default_size = 8
+
+    def create_grid(self, size, width=None, height=None):
+
+        self.default_size = size
+
+
+
+
+        if not width: width = self.root.winfo_screenwidth()
+        if not height: height = self.root.winfo_screenheight()
+
+        gap = int(size*self.root.scale)
+
+        if gap <= 4: # Doesnt draw if the gap is to small because it gets laggy
+            return
+
+        camx = self.root.canvas.canvasx(0)
+        camy = self.root.canvas.canvasy(0)
+
+        xoff = camx - camx%gap
+        yoff = camy - camy%gap
+
+
+
+        for x in range(0, width, gap):
+            line = self.root.canvas.create_line(x+xoff, camy, x+xoff, height+camy, width=1, fill="#222222", tags="gridline")
+            self.root.canvas.tag_lower(line)
+            self.vlines.append( line )
+        for y in range(0, height, gap):
+             line = self.root.canvas.create_line(camx, y+yoff, width+camx, y+yoff, width=1, fill="#222222", tags="gridline")
+             self.root.canvas.tag_lower(line)
+             self.hlines.append( line )
+
+    def clear(self):
+        self.root.canvas.delete("gridline")
+        self.vlines = []
+        self.hlines = []
+
+    def window_resize(self, e):
+        pass
+        self.clear()
+        self.create_grid(self.default_size, e.width, e.height)
+
+    def redraw(self, size, width=None, height=None):
+        if not size: size = self.default_size
+        self.clear()
+        self.create_grid(size, width, height)
+
 class Editor(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
         self.canvas = tk.Canvas(self, width=640, height=480, bg="black")
+
+
         self.canvas.pack(fill="both", expand=True)
         self.canvas.bind("<Button-1>", self.start_drawing)
         self.canvas.bind("<ButtonRelease-1>", self.stop_drawing)
@@ -16,21 +74,39 @@ class Editor(tk.Tk):
 
         self.bind("<KeyPress-Delete>", self.delete_selection)
 
+        self.bind("<KeyPress-bracketleft>", self.grid_smaller)
+        self.bind("<KeyPress-bracketright>", self.grid_larger)
+
+
         self.outline_rect = None
         self.rect_start = (0, 0)
 
         self.drawing = False
         self.x = 0
         self.level = []
-        self.gridsize = 16
+
 
         self.canvas.bind("<ButtonPress-2>", self.scroll_start)
         self.canvas.bind("<B2-Motion>", self.scroll_move)
 
         self.scale = 1
+
+        self.gridsize = 16
+        self.grid = Grid(self)
+        self.grid.create_grid(self.gridsize)
+
         self.selected = -1
         self.drag_mouse_start = (0, 0)
         self.drag_rect_start = (0, 0)
+
+    def grid_smaller(self, e):
+        self.gridsize/=2
+        self.grid.redraw(self.gridsize)
+
+    def grid_larger(self, e):
+        self.gridsize*=2
+        self.grid.redraw(self.gridsize)
+
 
     def delete_selection(self, e):
         self.canvas.delete(self.selected)
@@ -140,17 +216,19 @@ class Editor(tk.Tk):
             factor = 2
         elif event.delta == -120:
             factor = 0.5
-        #factor = 1.1 * event.delta
-
 
         self.canvas.scale(tk.ALL, 0, 0, factor, factor)
         self.scale *= factor
+
+        self.grid.redraw(self.gridsize)
 
     def scroll_start(self, event):
         self.canvas.scan_mark(event.x, event.y)
 
     def scroll_move(self, event):
         self.canvas.scan_dragto(event.x, event.y, gain=1)
+        self.grid.redraw(self.gridsize)
+
 
     def start_drawing(self, m):
         x, y = self.canvasx(m.x, self.gridsize), self.canvasy(m.y, self.gridsize)
