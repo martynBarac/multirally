@@ -10,8 +10,8 @@ class Grid:
         self.root = root
         self.root.bind("<Configure>", self.window_resize)
         self.default_size = 8
-        #self.screenw = 0
-        #self.screenh = 0
+        self.screenw = 0
+        self.screenh = 0
         self.lastxoff = 0
         self.lastyoff = 0
         self.gap = 0
@@ -20,15 +20,21 @@ class Grid:
         camx = self.root.canvas.canvasx(0)
         camy = self.root.canvas.canvasy(0)
 
+
+
         xoff = camx - camx%self.gap
         yoff = camy - camy%self.gap
-        xmove = xoff - self.lastxoff
-        ymove = yoff - self.lastyoff
+        #xmove = xoff - self.lastxoff
+        #ymove = yoff - self.lastyoff
+        for x in range(0, len(self.vlines)):
+            self.root.canvas.coords(self.vlines[x], (x*self.gap)+xoff, camy, (x*self.gap)+xoff, self.screenh+camy)
+            #print("x", self.root.canvas.coords(self.vlines[x]))
+        for y in range(0, len(self.hlines)):
 
-        self.root.canvas.move("gridline", xmove, ymove)
-
-        self.lastxoff = xoff
-        self.lastyoff = yoff
+            self.root.canvas.coords(self.hlines[y], camx, (y*self.gap)+yoff, self.screenw+camx, (y*self.gap)+yoff)
+            #print("y", self.root.canvas.coords(self.hlines[y]))
+        #self.lastxoff = xoff
+        #self.lastyoff = yoff
 
     def create_grid(self, size, width=None, height=None):
 
@@ -39,8 +45,8 @@ class Grid:
 
         if not width: width = self.root.winfo_screenwidth()
         if not height: height = self.root.winfo_screenheight()
-        #self.sreenw = width
-        #self.screenh = height
+        self.screenw = width
+        self.screenh = height
 
         self.gap = int(size*self.root.scale)
 
@@ -60,9 +66,9 @@ class Grid:
             self.root.canvas.tag_lower(line)
             self.vlines.append( line )
         for y in range(0, height, self.gap):
-             line = self.root.canvas.create_line(camx, y+yoff, width+camx, y+yoff, width=1, fill="#222222", tags="gridline")
-             self.root.canvas.tag_lower(line)
-             self.hlines.append( line )
+            line = self.root.canvas.create_line(camx, y+yoff, width+camx, y+yoff, width=1, fill="#222222", tags="gridline")
+            self.root.canvas.tag_lower(line)
+            self.hlines.append( line )
 
 
     def clear(self):
