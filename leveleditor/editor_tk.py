@@ -10,6 +10,25 @@ class Grid:
         self.root = root
         self.root.bind("<Configure>", self.window_resize)
         self.default_size = 8
+        #self.screenw = 0
+        #self.screenh = 0
+        self.lastxoff = 0
+        self.lastyoff = 0
+        self.gap = 0
+
+    def update_pos(self):
+        camx = self.root.canvas.canvasx(0)
+        camy = self.root.canvas.canvasy(0)
+
+        xoff = camx - camx%self.gap
+        yoff = camy - camy%self.gap
+        xmove = xoff - self.lastxoff
+        ymove = yoff - self.lastyoff
+
+        self.root.canvas.move("gridline", xmove, ymove)
+
+        self.lastxoff = xoff
+        self.lastyoff = yoff
 
     def create_grid(self, size, width=None, height=None):
 
@@ -20,28 +39,33 @@ class Grid:
 
         if not width: width = self.root.winfo_screenwidth()
         if not height: height = self.root.winfo_screenheight()
+        #self.sreenw = width
+        #self.screenh = height
 
-        gap = int(size*self.root.scale)
+        self.gap = int(size*self.root.scale)
 
-        if gap <= 4: # Doesnt draw if the gap is to small because it gets laggy
+        if self.gap <= 2: # Doesnt draw if the gap is to small because it gets laggy
             return
 
         camx = self.root.canvas.canvasx(0)
         camy = self.root.canvas.canvasy(0)
 
-        xoff = camx - camx%gap
-        yoff = camy - camy%gap
+        xoff = camx - camx%self.gap
+        yoff = camy - camy%self.gap
 
 
 
-        for x in range(0, width, gap):
+        for x in range(0, width, self.gap):
             line = self.root.canvas.create_line(x+xoff, camy, x+xoff, height+camy, width=1, fill="#222222", tags="gridline")
             self.root.canvas.tag_lower(line)
             self.vlines.append( line )
-        for y in range(0, height, gap):
+        for y in range(0, height, self.gap):
              line = self.root.canvas.create_line(camx, y+yoff, width+camx, y+yoff, width=1, fill="#222222", tags="gridline")
              self.root.canvas.tag_lower(line)
              self.hlines.append( line )
+
+        print(len(self.vlines), len(self.hlines))
+        print(width, height)
 
     def clear(self):
         self.root.canvas.delete("gridline")
@@ -49,7 +73,6 @@ class Grid:
         self.hlines = []
 
     def window_resize(self, e):
-        pass
         self.clear()
         self.create_grid(self.default_size, e.width, e.height)
 
@@ -227,7 +250,7 @@ class Editor(tk.Tk):
 
     def scroll_move(self, event):
         self.canvas.scan_dragto(event.x, event.y, gain=1)
-        self.grid.redraw(self.gridsize)
+        self.grid.update_pos()
 
 
     def start_drawing(self, m):
