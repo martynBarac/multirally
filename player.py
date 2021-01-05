@@ -106,7 +106,7 @@ class Player(entity.Entity):
                 # Right side of block
                 if self.xvel < 0:
                     if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos - self.xvel*dt, self.ypos):
-                        self.xpos = col[0] + 32
+                        self.xpos = col[0] + col[2]
                         self.xvel = 0
                 # Left side of block
                 elif self.xvel > 0:
@@ -116,7 +116,7 @@ class Player(entity.Entity):
                 # Bottom side of block
                 if self.yvel < 0:
                     if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos, self.ypos - self.yvel*dt):
-                        self.ypos = col[1] + 32
+                        self.ypos = col[1] + col[3]
                         self.yvel = 0
                 # Top side of block
                 elif self.yvel > 0:
