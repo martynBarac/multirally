@@ -60,7 +60,6 @@ class Grid:
         yoff = camy - camy%self.gap
 
 
-
         for x in range(0, width, self.gap):
             line = self.root.canvas.create_line(x+xoff, camy, x+xoff, height+camy, width=1, fill="#222222", tags="gridline")
             self.root.canvas.tag_lower(line)
@@ -85,16 +84,43 @@ class Grid:
         self.clear()
         self.create_grid(size, width, height)
 
+
+class ToolFrame(tk.Frame):
+    def __init__(self, root):
+        tk.Frame.__init__(self, root, width=100)
+        self.label = tk.Label()
+
+        buttons_text = ["Walls", "Spawn"]
+        self.buttons = []
+
+        # Create buttons
+        for i in range(2):
+            button = tk.Button(self, text= buttons_text[i], command= lambda id=i: self.select_button(id))
+            self.buttons.append(button)
+            button.pack()
+
+
+        self.tool = -1
+
+    def select_button(self, button_id):
+        if self.tool != -1:
+            self.buttons[self.tool].config(relief=tk.RAISED)
+        self.buttons[button_id].config(relief=tk.SUNKEN)
+        self.tool = button_id
+
+
 class Editor(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
         self.canvas = tk.Canvas(self, width=640, height=480, bg="black")
+        self.frm_items = ToolFrame(self)
 
-
+        self.frm_items.pack(side="right", fill="y")
         self.canvas.pack(fill="both", expand=True)
+
         self.canvas.bind("<Button-1>", self.start_drawing)
         self.canvas.bind("<ButtonRelease-1>", self.stop_drawing)
-        self.canvas.bind("<Motion>", self.mouse_move)
+        self.canvas.bind("<B1-Motion>", self.drag_draw)
         self.canvas.bind("<MouseWheel>", self.zoom)
         self.bind("<KeyPress-s>", self.save_level)
         self.bind("<KeyPress-l>", self.load_level)
@@ -116,11 +142,13 @@ class Editor(tk.Tk):
         self.canvas.bind("<ButtonPress-2>", self.scroll_start)
         self.canvas.bind("<B2-Motion>", self.scroll_move)
 
-        self.scale = 1
+
 
         self.gridsize = 16
+        self.scale = 1
         self.grid = Grid(self)
         self.grid.create_grid(self.gridsize)
+
 
         self.selected = -1
         self.drag_mouse_start = (0, 0)
@@ -270,26 +298,38 @@ class Editor(tk.Tk):
         self.grid.update_pos()
 
 
-    def start_drawing(self, m):
-        x, y = self.canvasx(m.x, self.gridsize), self.canvasy(m.y, self.gridsize)
+    def start_drawing(self, e):
+        if self.frm_items.tool == 0:
+            self.start_drawing_wall(e)
+    def stop_drawing(self, e):
+        if self.frm_items.tool == 0:
+            self.stop_drawing_wall(e)
+    def drag_draw(self, e):
+        if self.frm_items.tool == 0:
+            self.drag_drawing_wall(e)
 
+    def start_drawing_wall(self, m):
+        x, y = self.canvasx(m.x, self.gridsize), self.canvasy(m.y, self.gridsize)
 
         self.drawing = True
         self.outline_rect = self.canvas.create_rectangle(x, y, x, y, outline="green", width=2)
         self.rect_start = (x, y)
 
-    def stop_drawing(self, m):
+    def stop_drawing_wall(self, m):
         x, y = self.canvasx(m.x, self.gridsize), self.canvasy(m.y, self.gridsize)
 
         self.drawing = False
         self.canvas.delete(self.outline_rect)
         self.create_rect((x, y, self.rect_start[0], self.rect_start[1]))
 
-    def mouse_move(self, m):
-        x, y = self.canvasx(m.x, self.gridsize), self.canvasy(m.y, self.gridsize)
+    def drag_drawing_wall(self, e):
+        x, y = self.canvasx(e.x, self.gridsize), self.canvasy(e.y, self.gridsize)
 
         if self.drawing:
             self.canvas.coords(self.outline_rect, self.rect_start[0], self.rect_start[1], x, y)
+
+    #def mouse_move(self, m):
+
 
 
 if __name__ == "__main__":
