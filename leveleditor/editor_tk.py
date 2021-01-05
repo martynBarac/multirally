@@ -194,7 +194,7 @@ class Editor(tk.Tk):
                     to_save.append( self.coords_to_rect(self.canvas.coords(self.level[i])) )
                 i += 1
             # Save to file
-            file = filedialog.asksaveasfile(initialdir=".")
+            file = filedialog.asksaveasfile(initialdir="../levels")
             if file:
                 file.write(json.dumps(to_save))
                 file.close()
@@ -205,7 +205,7 @@ class Editor(tk.Tk):
         if not ctrl:
             return
 
-        path = filedialog.askopenfilename(initialdir=".")
+        path = filedialog.askopenfilename(initialdir="../levels")
         if path:
             file = open(path, "r")
             data = file.read()
