@@ -136,7 +136,7 @@ class Editor(tk.Tk):
 
         self.drawing = False
         self.x = 0
-        self.level = []
+        self.level = self.empty_level()
 
 
         self.canvas.bind("<ButtonPress-2>", self.scroll_start)
@@ -154,6 +154,9 @@ class Editor(tk.Tk):
         self.drag_mouse_start = (0, 0)
         self.drag_rect_start = (0, 0)
 
+    def empty_level(self):
+        return {"wall":[], "spawn":[]}
+
     def grid_smaller(self, e):
         self.gridsize/=2
         self.grid.redraw(self.gridsize)
@@ -162,13 +165,15 @@ class Editor(tk.Tk):
         self.gridsize*=2
         self.grid.redraw(self.gridsize)
 
-
     def delete_selection(self, e):
-        self.canvas.delete(self.selected)
-        self.level.remove(self.selected[0])
+        if self.selected != -1:
+            type = self.canvas.gettags(self.selected)[0]
+            self.canvas.delete(self.selected)
+            self.level[type].remove(self.selected[0])
+            self.selected = -1
 
     def rect_selected(self, e):
-        mx, my = self.canvasx(e.x, self.gridsize), self.canvasy(e.y, self.gridsize)
+        mx, my = self.canvas.canvasx(e.x), self.canvas.canvasy(e.y)
         rect = self.canvas.find_closest(mx, my)
         self.canvas.itemconfig(rect, outline="green")
         if self.selected != rect:
@@ -211,16 +216,21 @@ class Editor(tk.Tk):
     def save_level(self, e):
         ctrl = (e.state & 0x4) != 0
         if ctrl:
-            to_save = []
-            # Remove all None elements of list
+            to_save = {}
+
             i = 0
-            while i < len(self.level):
-                if self.level[i] == None:
-                    to_save.pop(i)
-                    i -= 1
-                else:
-                    to_save.append( self.coords_to_rect(self.canvas.coords(self.level[i])) )
+            new_wall = []
+            while i < len(self.level["wall"]):
+                new_wall.append( self.coords_to_rect(self.canvas.coords(self.level["wall"][i])) )
                 i += 1
+            new_spawn = []
+            for i in range(len(self.level["spawn"])):
+                x0, y0, x1, y1 = self.canvas.coords(self.level["spawn"][i])
+                new_spawn.append([x0, y0])
+
+            to_save["wall"] = new_wall
+            to_save["spawn"] = new_spawn
+
             # Save to file
             file = filedialog.asksaveasfile(initialdir="../levels")
             if file:
@@ -237,26 +247,35 @@ class Editor(tk.Tk):
         if path:
             file = open(path, "r")
             data = file.read()
-            rects = json.loads(data)
+            loaded_level = json.loads(data)
             file.close()
             print("loaded", path)
 
             # Delete everything in level already
             self.canvas.delete("all")
-            self.level = []
+            self.level = self.empty_level()
 
             # convert and append all rects (game uses [x, y, w, h], tkinter uses [x0, y0, x1, y1])
-            for r in rects:
+            for r in loaded_level["wall"]:
                 coords = self.rect_to_coords(r)
                 self.create_rect(coords)
 
+            for s in loaded_level["spawn"]:
+                self.create_spawn(s)
+
 
     def create_rect(self, coords):
-        new_rect = self.canvas.create_rectangle(coords[0], coords[1], coords[2], coords[3], fill="white", outline="gray", width=2 )
+        new_rect = self.canvas.create_rectangle(coords[0], coords[1], coords[2], coords[3], fill="white", outline="gray", width=2, tags="wall" )
         self.canvas.tag_bind(new_rect, "<Button-3>", self.rect_selected)
         self.canvas.tag_bind(new_rect, "<B3-Motion>", self.rect_dragged)
-        self.level.append(new_rect)
+        self.level["wall"].append(new_rect)
         return new_rect
+
+    def create_spawn(self, pos):
+        spawn = self.canvas.create_rectangle(pos[0], pos[1], pos[0]+8*self.scale, pos[1]+8*self.scale, fill="blue", tags="spawn")
+        self.canvas.tag_bind(spawn, "<Button-3>", self.rect_selected)
+        self.canvas.tag_bind(spawn, "<B3-Motion>", self.rect_dragged)
+        self.level["spawn"].append(spawn)
 
     def canvasx(self, x, grid=None):
         return self.canvas.canvasx(x, grid*self.scale)
@@ -301,6 +320,8 @@ class Editor(tk.Tk):
     def start_drawing(self, e):
         if self.frm_items.tool == 0:
             self.start_drawing_wall(e)
+        elif self.frm_items.tool == 1:
+            self.draw_spawn(e)
     def stop_drawing(self, e):
         if self.frm_items.tool == 0:
             self.stop_drawing_wall(e)
@@ -328,7 +349,9 @@ class Editor(tk.Tk):
         if self.drawing:
             self.canvas.coords(self.outline_rect, self.rect_start[0], self.rect_start[1], x, y)
 
-    #def mouse_move(self, m):
+    def draw_spawn(self, e):
+        pos = self.canvasx(e.x, self.gridsize), self.canvasy(e.y, self.gridsize)
+        self.create_spawn(pos)
 
 
 
