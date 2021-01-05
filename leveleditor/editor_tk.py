@@ -101,6 +101,7 @@ class ToolFrame(tk.Frame):
 
 
         self.tool = -1
+        self.select_button(0)
 
     def select_button(self, button_id):
         if self.tool != -1:
