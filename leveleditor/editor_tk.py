@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import filedialog
 import json
 
-
 class Grid:
     def __init__(self, root):
         self.hlines = []
@@ -160,10 +159,12 @@ class Editor(tk.Tk):
 
     def grid_smaller(self, e):
         self.gridsize/=2
+        print(self.gridsize)
         self.grid.redraw(self.gridsize)
 
     def grid_larger(self, e):
         self.gridsize*=2
+        print(self.gridsize)
         self.grid.redraw(self.gridsize)
 
     def delete_selection(self, e):
@@ -273,7 +274,7 @@ class Editor(tk.Tk):
         return new_rect
 
     def create_spawn(self, pos):
-        spawn = self.canvas.create_rectangle(pos[0], pos[1], pos[0]+8*self.scale, pos[1]+8*self.scale, fill="blue", tags="spawn")
+        spawn = self.canvas.create_rectangle(pos[0], pos[1], pos[0]+16*self.scale, pos[1]+16*self.scale, fill="blue", tags="spawn")
         self.canvas.tag_bind(spawn, "<Button-3>", self.rect_selected)
         self.canvas.tag_bind(spawn, "<B3-Motion>", self.rect_dragged)
         self.level["spawn"].append(spawn)
