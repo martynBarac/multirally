@@ -47,7 +47,7 @@ start_time2 = [st]
 snapshots = []
 msg = None
 
-lvl0 = game.load_level("antsnest")
+lvl0 = game.load_level("level0")
 
 
 def do_thing_with_message():

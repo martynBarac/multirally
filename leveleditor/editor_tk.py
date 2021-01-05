@@ -223,12 +223,18 @@ class Editor(tk.Tk):
             i = 0
             new_wall = []
             while i < len(self.level["wall"]):
-                new_wall.append( self.coords_to_rect(self.canvas.coords(self.level["wall"][i])) )
+                coords = self.canvas.coords(self.level["wall"][i])
+                coords[0] /= self.scale
+                coords[1] /= self.scale
+                coords[2] /= self.scale
+                coords[3] /= self.scale
+
+                new_wall.append( self.coords_to_rect(coords) )
                 i += 1
             new_spawn = []
             for i in range(len(self.level["spawn"])):
                 x0, y0, x1, y1 = self.canvas.coords(self.level["spawn"][i])
-                new_spawn.append([x0, y0])
+                new_spawn.append([x0/self.scale, y0/self.scale])
 
             to_save["wall"] = new_wall
             to_save["spawn"] = new_spawn
@@ -259,7 +265,13 @@ class Editor(tk.Tk):
 
             # convert and append all rects (game uses [x, y, w, h], tkinter uses [x0, y0, x1, y1])
             for r in loaded_level["wall"]:
+
                 coords = self.rect_to_coords(r)
+                coords[0] *= self.scale
+                coords[1] *= self.scale
+                coords[2] *= self.scale
+                coords[3] *= self.scale
+
                 self.create_rect(coords)
 
             for s in loaded_level["spawn"]:
