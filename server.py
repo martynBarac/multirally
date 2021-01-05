@@ -36,7 +36,7 @@ class Server:
                 self.maybe_readable.append(conn)
                 self.maybe_writeable.append(conn)
                 self.network_dict[conn] = Network(conn)
-                self.world.add_new_player(conn, "car", 0, 0, 0)
+                self.world.add_new_player(conn, "car")
                 self.new_clients.append(conn)
                 print(addr, "Connected!")
             else:

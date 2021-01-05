@@ -8,7 +8,7 @@ class World:
     def __init__(self, level_name):
         self.player_table = {} # Holds all players {Class: client, ...}
         self.entdict = {} # Holds all entities {id: Class}
-        self.walls = game.load_level(level_name)
+        self.level = game.load_level(level_name)
         self.dt = 1.5
         self.snapshots = [] # Holds entdicts from last 10 frames [oldest frame, ..., newest frame]
         self.create_ents = [] # a list of any ents that were created
@@ -17,8 +17,9 @@ class World:
 
 
 
-    def add_new_player(self, client, name, spawnx, spawny, spawnang):
-        new_player = Player(spawnx, spawny, spawnang, name)
+    def add_new_player(self, client, name):
+        spawnx, spawny = self.level["spawn"][0] # Get first spawn point
+        new_player = Player(spawnx, spawny, 0, name)
         new_player.netcolour.var = (random.randrange(0, 255), random.randrange(0, 255), random.randrange(0, 255))
         self.add_new_entity(new_player)
         self.player_table[new_player] = client

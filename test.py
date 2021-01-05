@@ -10,7 +10,7 @@ import socket
 
 def world_test():
 
-    new_world = World("level0")
+    new_world = World("level_with_spawn")
     new_world.add_new_player("127.0.0.1", "Hello", 0, 0, 0)
 
     new_world.add_new_entity(Powerup(16.01, 0, 0))
@@ -36,7 +36,7 @@ def world_test():
 
 def server_test():
     # socket.gethostbyname(socket.gethostname() gets ip address
-    my_server = server.Server( socket.gethostbyname(socket.gethostname() ), 27014, "level0")
+    my_server = server.Server( socket.gethostbyname(socket.gethostname() ), 27014, "antsnest")
     my_server.world.add_new_entity(Powerup(128, 128, 0))
     while True:
         my_server.update()

@@ -45,7 +45,7 @@ class Player(entity.Entity):
     def update(self, world, actions):
         # world variables
         dt = world.dt
-        lvl0 = world.walls
+        lvl0 = world.level["wall"]
 
 
         # Do actions
