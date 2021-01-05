@@ -67,7 +67,7 @@ class Player(entity.Entity):
         speed = math.sqrt(self.xvel**2 + self.yvel**2)
         direction = math.atan2(self.yvel, self.xvel)
 
-        fric = speed*0.001
+        fric = speed*0.05
         centripmax = 2
         centripForce = -math.sin(self.angle+direction) * centripmax
         # print("dir:", math.degrees(direction))
