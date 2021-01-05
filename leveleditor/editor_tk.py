@@ -64,8 +64,6 @@ class Grid:
              self.root.canvas.tag_lower(line)
              self.hlines.append( line )
 
-        print(len(self.vlines), len(self.hlines))
-        print(width, height)
 
     def clear(self):
         self.root.canvas.delete("gridline")
@@ -133,9 +131,7 @@ class Editor(tk.Tk):
 
     def delete_selection(self, e):
         self.canvas.delete(self.selected)
-        print(self.selected)
         self.level.remove(self.selected[0])
-        print(self.level)
 
     def rect_selected(self, e):
         mx, my = self.canvasx(e.x, self.gridsize), self.canvasy(e.y, self.gridsize)
@@ -220,7 +216,6 @@ class Editor(tk.Tk):
                 coords = self.rect_to_coords(r)
                 self.create_rect(coords)
 
-        print(rects, self.level)
 
     def create_rect(self, coords):
         new_rect = self.canvas.create_rectangle(coords[0], coords[1], coords[2], coords[3], fill="white", outline="gray", width=2 )
@@ -231,8 +226,12 @@ class Editor(tk.Tk):
 
     def canvasx(self, x, grid=None):
         return self.canvas.canvasx(x, grid*self.scale)
+
     def canvasy(self, y, grid=None):
-        return self.canvas.canvasy(y, grid*self.scale)
+        return self.canvas.canvasy(y,  grid*self.scale)
+
+    def canvas_scale(self, x, y):
+        return ( int(self.canvas.canvasx(x)/self.scale), int(self.canvas.canvasy(y)/self.scale) )
 
     def zoom(self, event):
         if event.delta == 120:
@@ -240,9 +239,21 @@ class Editor(tk.Tk):
         elif event.delta == -120:
             factor = 0.5
 
+        mouse_b = self.canvas_scale(event.x, event.y) # Mouse pos before zoom
+
+        # scale canvas
         self.canvas.scale(tk.ALL, 0, 0, factor, factor)
         self.scale *= factor
 
+        mouse_a = self.canvas_scale(event.x, event.y) # Mouse pos after zoom
+
+        # Move canvas so mouse stays in the same position
+        movex = mouse_a[0] - mouse_b[0]
+        movey = mouse_a[1] - mouse_b[1]
+        self.canvas.scan_mark(0, 0)
+        self.canvas.scan_dragto(int(movex*self.scale), int(movey*self.scale), gain=1)
+
+        # Redraw grid
         self.grid.redraw(self.gridsize)
 
     def scroll_start(self, event):
