@@ -57,7 +57,10 @@ class Entity:
 
                 numerator = y0*(x1-x)+y1*(x-x0)
                 denominator = x1 - x0
-                self.data_table[__id].var = numerator/denominator
+                if curtime > x1:
+                    self.data_table[__id].var=y1
+                else:
+                    self.data_table[__id].var = numerator/denominator
             else:
                 self.data_table[__id].var = snapshots[0][_id]
 
