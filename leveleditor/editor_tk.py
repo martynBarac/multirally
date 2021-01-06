@@ -46,6 +46,7 @@ class Grid:
         if not height: height = self.root.winfo_screenheight()
         self.screenw = width
         self.screenh = height
+        print(width, height)
 
         self.gap = int(size*self.root.scale)
 
@@ -75,8 +76,9 @@ class Grid:
         self.hlines = []
 
     def window_resize(self, e):
-        self.clear()
-        self.create_grid(self.default_size, e.width, e.height)
+        pass
+        #self.clear()
+        #self.create_grid(self.default_size, min(e.width, 640), min(e.height, 480))
 
     def redraw(self, size, width=None, height=None):
         if not size: size = self.default_size
