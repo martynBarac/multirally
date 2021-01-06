@@ -27,11 +27,9 @@ class Grid:
         #ymove = yoff - self.lastyoff
         for x in range(0, len(self.vlines)):
             self.root.canvas.coords(self.vlines[x], (x*self.gap)+xoff, camy, (x*self.gap)+xoff, self.screenh+camy)
-            #print("x", self.root.canvas.coords(self.vlines[x]))
         for y in range(0, len(self.hlines)):
 
             self.root.canvas.coords(self.hlines[y], camx, (y*self.gap)+yoff, self.screenw+camx, (y*self.gap)+yoff)
-            #print("y", self.root.canvas.coords(self.hlines[y]))
         #self.lastxoff = xoff
         #self.lastyoff = yoff
 
@@ -46,7 +44,6 @@ class Grid:
         if not height: height = self.root.winfo_screenheight()
         self.screenw = width
         self.screenh = height
-        print(width, height)
 
         self.gap = int(size*self.root.scale)
 
@@ -111,6 +108,8 @@ class ToolFrame(tk.Frame):
         self.tool = button_id
 
 
+
+
 class Editor(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
@@ -124,6 +123,9 @@ class Editor(tk.Tk):
         self.canvas.bind("<ButtonRelease-1>", self.stop_drawing)
         self.canvas.bind("<B1-Motion>", self.drag_draw)
         self.canvas.bind("<MouseWheel>", self.zoom)
+        self.canvas.bind("<Button-3>", self.rect_selected)
+        self.canvas.bind("<B3-Motion>", self.rect_dragged)
+
         self.bind("<KeyPress-s>", self.save_level)
         self.bind("<KeyPress-l>", self.load_level)
 
@@ -153,6 +155,7 @@ class Editor(tk.Tk):
 
 
         self.selected = -1
+        self.side_dragged = 0 # 0 is dragging whole object, 1: resize right side
         self.drag_mouse_start = (0, 0)
         self.drag_rect_start = (0, 0)
 
@@ -178,22 +181,77 @@ class Editor(tk.Tk):
 
     def rect_selected(self, e):
         mx, my = self.canvas.canvasx(e.x), self.canvas.canvasy(e.y)
-        rect = self.canvas.find_closest(mx, my)
-        self.canvas.itemconfig(rect, outline="green")
-        if self.selected != rect:
-            self.canvas.itemconfig(self.selected, outline="gray")
-            self.selected = rect
+        rect = None
+        rects = self.canvas.find_withtag("selectable")
 
-        self.drag_mouse_start = (e.x, e.y)
-        c = self.canvas.coords(rect)
-        self.drag_rect_start = (c[0], c[1])
+        # Find clicked rect
+        for r in rects:
+            x0, y0, x1, y1 = self.canvas.coords(r)
+            if mx > x0 - 10 and mx < x1 + 10:
+                if my > y0 - 10 and my < y1 + 10:
+                    rect = r
+
+        #rect = self.canvas.find_closest(mx, my)
+        #rect = self.canvas.find_overlapping()
+        self.side_dragged = -1
+
+
+        if rect:
+            if "current" in self.canvas.gettags(rect):
+                self.side_dragged = 0
+
+            tags = self.canvas.gettags(rect)
+
+            self.canvas.itemconfig(rect, outline="green") # Change outline to green
+
+            # Change non selected rects outlines to grey (if we didnt click the selected rect)
+            if self.selected != rect:
+                self.canvas.itemconfig(self.selected, outline="gray")
+                self.selected = rect
+
+
+
+
+            self.drag_mouse_start = (e.x, e.y)
+            c = self.canvas.coords(rect)
+            self.drag_rect_start = (c[0], c[1], c[2], c[3])
+            if "resizable" in tags:
+                if mx > c[2] and mx < c[2] + 10: # Right side dragged
+                    self.side_dragged = 1
+                elif my > c[3] and my < c[3] + 10: # Bottom
+                    self.side_dragged = 2
+                elif mx > c[0] - 10 and mx < c[0]: # Left
+                    self.side_dragged = 3
+                elif my > c[1] - 10 and my < c[1]: # Top
+                    self.side_dragged = 4
+                #else:
+                    #self.side_dragged = -1
+
+
 
     def rect_dragged(self, e):
         x0, y0, x1, y1 = self.canvas.coords(self.selected)
-        newx = self.drag_rect_start[0] - (self.drag_mouse_start[0] - e.x)
-        newy = self.drag_rect_start[1] - (self.drag_mouse_start[1] - e.y)
-        newx, newy = self.pos_to_grid([newx, newy])
-        self.canvas.move(self.selected, newx-x0, newy-y0)
+
+        if self.side_dragged == 0: # Middle part dragged
+            newx = self.drag_rect_start[0] - (self.drag_mouse_start[0] - e.x)
+            newy = self.drag_rect_start[1] - (self.drag_mouse_start[1] - e.y)
+            newx, newy = self.pos_to_grid([newx, newy])
+            self.canvas.move(self.selected, newx-x0, newy-y0)
+        else:
+            newx0, newy0, newx1, newy1 = x0, y0, x1, y1
+            if self.side_dragged == 1: # Right
+                newx1 =  self.drag_rect_start[2] - (self.drag_mouse_start[0] - e.x)
+            elif self.side_dragged == 2: # Bottom
+                newy1 =  self.drag_rect_start[3] - (self.drag_mouse_start[1] - e.y)
+            elif self.side_dragged == 3: # Left
+                newx0 = self.drag_rect_start[0] - (self.drag_mouse_start[0] - e.x)
+            elif self.side_dragged == 4: # Top
+                newy0 =  self.drag_rect_start[1] - (self.drag_mouse_start[1] - e.y)
+
+            newx0, newy0 = self.pos_to_grid([newx0, newy0])
+            newx1, newy1 = self.pos_to_grid([newx1, newy1])
+            self.canvas.coords(self.selected, newx0, newy0, newx1, newy1)
+
 
     def pos_to_grid(self, pos):
 
@@ -281,16 +339,16 @@ class Editor(tk.Tk):
 
 
     def create_rect(self, coords):
-        new_rect = self.canvas.create_rectangle(coords[0], coords[1], coords[2], coords[3], fill="white", outline="gray", width=2, tags="wall" )
-        self.canvas.tag_bind(new_rect, "<Button-3>", self.rect_selected)
-        self.canvas.tag_bind(new_rect, "<B3-Motion>", self.rect_dragged)
+        new_rect = self.canvas.create_rectangle(coords[0], coords[1], coords[2], coords[3], fill="white", outline="gray", width=2, tags=("wall", "selectable", "resizable") )
+        #self.canvas.tag_bind(new_rect, "<Button-3>", self.rect_selected)
+        #self.canvas.tag_bind(new_rect, "<B3-Motion>", self.rect_dragged)
         self.level["wall"].append(new_rect)
         return new_rect
 
     def create_spawn(self, pos):
-        spawn = self.canvas.create_rectangle(pos[0], pos[1], pos[0]+16*self.scale, pos[1]+16*self.scale, fill="blue", tags="spawn")
-        self.canvas.tag_bind(spawn, "<Button-3>", self.rect_selected)
-        self.canvas.tag_bind(spawn, "<B3-Motion>", self.rect_dragged)
+        spawn = self.canvas.create_rectangle(pos[0], pos[1], pos[0]+16*self.scale, pos[1]+16*self.scale, fill="blue", tags=("spawn", "selectable"))
+        #self.canvas.tag_bind(spawn, "<Button-3>", self.rect_selected)
+        #self.canvas.tag_bind(spawn, "<B3-Motion>", self.rect_dragged)
         self.level["spawn"].append(spawn)
 
     def canvasx(self, x, grid=None):
