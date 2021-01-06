@@ -174,9 +174,10 @@ class Editor(tk.Tk):
 
     def delete_selection(self, e):
         if self.selected != -1:
+            print(self.selected)
             type = self.canvas.gettags(self.selected)[0]
             self.canvas.delete(self.selected)
-            self.level[type].remove(self.selected[0])
+            self.level[type].remove(self.selected)
             self.selected = -1
 
     def rect_selected(self, e):
@@ -230,27 +231,28 @@ class Editor(tk.Tk):
 
 
     def rect_dragged(self, e):
-        x0, y0, x1, y1 = self.canvas.coords(self.selected)
+        if self.selected != -1:
+            x0, y0, x1, y1 = self.canvas.coords(self.selected)
 
-        if self.side_dragged == 0: # Middle part dragged
-            newx = self.drag_rect_start[0] - (self.drag_mouse_start[0] - e.x)
-            newy = self.drag_rect_start[1] - (self.drag_mouse_start[1] - e.y)
-            newx, newy = self.pos_to_grid([newx, newy])
-            self.canvas.move(self.selected, newx-x0, newy-y0)
-        else:
-            newx0, newy0, newx1, newy1 = x0, y0, x1, y1
-            if self.side_dragged == 1: # Right
-                newx1 =  self.drag_rect_start[2] - (self.drag_mouse_start[0] - e.x)
-            elif self.side_dragged == 2: # Bottom
-                newy1 =  self.drag_rect_start[3] - (self.drag_mouse_start[1] - e.y)
-            elif self.side_dragged == 3: # Left
-                newx0 = self.drag_rect_start[0] - (self.drag_mouse_start[0] - e.x)
-            elif self.side_dragged == 4: # Top
-                newy0 =  self.drag_rect_start[1] - (self.drag_mouse_start[1] - e.y)
+            if self.side_dragged == 0: # Middle part dragged
+                newx = self.drag_rect_start[0] - (self.drag_mouse_start[0] - e.x)
+                newy = self.drag_rect_start[1] - (self.drag_mouse_start[1] - e.y)
+                newx, newy = self.pos_to_grid([newx, newy])
+                self.canvas.move(self.selected, newx-x0, newy-y0)
+            else:
+                newx0, newy0, newx1, newy1 = x0, y0, x1, y1
+                if self.side_dragged == 1: # Right
+                    newx1 =  self.drag_rect_start[2] - (self.drag_mouse_start[0] - e.x)
+                elif self.side_dragged == 2: # Bottom
+                    newy1 =  self.drag_rect_start[3] - (self.drag_mouse_start[1] - e.y)
+                elif self.side_dragged == 3: # Left
+                    newx0 = self.drag_rect_start[0] - (self.drag_mouse_start[0] - e.x)
+                elif self.side_dragged == 4: # Top
+                    newy0 =  self.drag_rect_start[1] - (self.drag_mouse_start[1] - e.y)
 
-            newx0, newy0 = self.pos_to_grid([newx0, newy0])
-            newx1, newy1 = self.pos_to_grid([newx1, newy1])
-            self.canvas.coords(self.selected, newx0, newy0, newx1, newy1)
+                newx0, newy0 = self.pos_to_grid([newx0, newy0])
+                newx1, newy1 = self.pos_to_grid([newx1, newy1])
+                self.canvas.coords(self.selected, newx0, newy0, newx1, newy1)
 
 
     def pos_to_grid(self, pos):
