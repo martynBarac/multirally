@@ -198,35 +198,39 @@ class Editor(tk.Tk):
 
 
         if rect:
-            if "current" in self.canvas.gettags(rect):
-                self.side_dragged = 0
-
             tags = self.canvas.gettags(rect)
+            if "current" in tags:
+                self.side_dragged = 0
+                self.canvas.itemconfig(rect, outline="green") # Change outline to green
 
-            self.canvas.itemconfig(rect, outline="green") # Change outline to green
-
-            # Change non selected rects outlines to grey (if we didnt click the selected rect)
-            if self.selected != rect:
-                self.canvas.itemconfig(self.selected, outline="gray")
-                self.selected = rect
-
-
+                # Change non selected rects outlines to grey (if we didnt click the selected rect)
+                if self.selected != rect:
+                    self.canvas.itemconfig(self.selected, outline="gray")
+                    self.selected = rect
 
 
             self.drag_mouse_start = (e.x, e.y)
             c = self.canvas.coords(rect)
             self.drag_rect_start = (c[0], c[1], c[2], c[3])
-            if "resizable" in tags:
-                if mx > c[2] and mx < c[2] + 10: # Right side dragged
-                    self.side_dragged = 1
-                elif my > c[3] and my < c[3] + 10: # Bottom
-                    self.side_dragged = 2
-                elif mx > c[0] - 10 and mx < c[0]: # Left
-                    self.side_dragged = 3
-                elif my > c[1] - 10 and my < c[1]: # Top
-                    self.side_dragged = 4
-                #else:
-                    #self.side_dragged = -1
+            if  rect == self.selected:
+                if "resizable" in tags:
+
+                    # NOTE:
+                    # the +/- 2 is there to make sure you cant drag a box that
+                    # isnt already selected.
+                    # hovering over the outline count as hovering over the box
+                    # and the outline of the boxes are 2 pixels thick
+
+                    if mx > c[2]+2 and mx < c[2] + 15: # Right side dragged
+                        self.side_dragged = 1
+                    elif my > c[3]+2 and my < c[3] + 15: # Bottom
+                        self.side_dragged = 2
+                    elif mx > c[0] - 15 and mx < c[0]-2: # Left
+                        self.side_dragged = 3
+                    elif my > c[1] - 15 and my < c[1]-2: # Top
+                        self.side_dragged = 4
+                    #else:
+                        #self.side_dragged = -1
 
 
 
