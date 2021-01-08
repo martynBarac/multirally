@@ -6,12 +6,15 @@ from network import *
 from powerup import *
 import entity_table
 import game
+import sys
+
+
 
 SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
-
-addr = input("Enter server address: ")
-if not addr:
-    addr = "192.168.0.20"
+if len(sys.argv) >= 2:
+    addr = sys.argv[1]
+else:
+    addr =  socket.gethostbyname(socket.gethostname() )
 
 addr = addr.split(":")
 if len(addr) > 1:
