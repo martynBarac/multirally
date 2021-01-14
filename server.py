@@ -60,6 +60,7 @@ class Server:
                 gamestate = self.world.send_entire_gamestate()
                 if pid is not None:
                     gamestate["CAM"] = pid
+                gamestate["LEV"] = self.world.level_name
                 self.network_dict[s].send_msg(gamestate)
                 self.new_clients.remove(s)
             else:

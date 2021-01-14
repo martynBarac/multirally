@@ -50,13 +50,14 @@ start_time2 = [st]
 snapshots = []
 msg = None
 
-lvl0 = game.load_level("level0")
+class Dat:
+    lvl = {"wall":[]}
 
 
 def do_thing_with_message():
     cf = None
     if msg:
-        # print(msg)
+        print(msg)
         st = time.perf_counter()
         start_time2.append(st)
         start_time2.pop(0)
@@ -76,6 +77,10 @@ def do_thing_with_message():
         if 'CAM' in msg:
             cf = entity_dict[str(msg['CAM'])]
             del (msg['CAM'])
+
+        if 'LEV' in msg:
+            Dat.lvl = game.load_level(msg['LEV'])
+            del msg['LEV']
 
         snapshots.append(msg)
         if len(snapshots) > 2:
@@ -144,7 +149,7 @@ while not game_over:
             cam = (camfollowing.netxpos.var-SCREEN_WIDTH//2, camfollowing.netypos.var-SCREEN_HEIGHT//2)
         entity_dict[_id].draw(pg, screen, cam)
 
-    for wall in lvl0["wall"]:
+    for wall in Dat.lvl["wall"]:
         pg.draw.rect(screen, (255, 255, 255), [wall[0]-cam[0], wall[1]-cam[1], wall[2], wall[3]])
 
     dt = clock.tick(FRAMERATE/2)

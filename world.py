@@ -9,6 +9,7 @@ class World:
         self.player_table = {} # Holds all players {Class: client, ...}
         self.entdict = {} # Holds all entities {id: Class}
         self.level = game.load_level(level_name)
+        self.level_name = level_name
         self.dt = 1.5
         self.snapshots = [] # Holds entdicts from last 10 frames [oldest frame, ..., newest frame]
         self.create_ents = [] # a list of any ents that were created
