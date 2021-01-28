@@ -19,6 +19,7 @@ from array import array
 from ctypes import *
 
 import glm #pip install pyglm
+import pywavefront #pip install pywavefront
 
 
 
@@ -61,6 +62,14 @@ def loadTexture(filename):
         )
 
     return ID
+
+
+pg.init()
+display = (640, 480)
+pg.display.set_mode(display, DOUBLEBUF|OPENGL)
+car_tex = loadTexture("sprites/car.png")
+happy_tex = loadTexture("sprites/happy.png")
+
 
 class Shader:
     def __init__(self, vertex_path, fragment_path):
@@ -110,6 +119,153 @@ class Shader:
 
         self.ID = shaderProgram
 
+class Obj:
+    def __init__(self, file):
+        f = open(file, "r")
+        data = f.readlines()
+        f.close()
+
+        self.vertices = []
+        self.faces = []
+        defined_verts = {}
+        objverts = []
+        objtexcoords = []
+        curr_index = 0
+
+        for line in data:
+            list = line.split()
+            if list[0] == "v": # Vertex position
+                for coord in list[1:]:
+                    objverts.append(float(coord))
+            if list[0] == "vt": # Texture coord
+                for texcoord in list[1:]:
+                    objtexcoords.append(float(texcoord))
+
+            if list[0] == "f": # face
+
+                for vertex in list[1:]:
+                    """
+                    For Every unique index combination in the obj file (ie. 1/5/2)
+                    we create a new index and add the position/tex coord/normal.
+
+                    This needs to be done because the obj format has an index for
+                    each unique position, an index for each unique normal and
+                    and index for each unique texture coord,
+                    but opengl only has an index for each position/texture coord/normal combination
+                    """
+                    vertdat = vertex.split("/")
+                    # vertex looks like pos_index/texture_index/normal_index
+
+                    if vertex not in defined_verts:
+                        self.faces.append(curr_index)
+                        defined_verts[vertex] = curr_index
+
+                        curr_index += 1
+
+
+                        # Add Vertex Index
+                        # we subtract 1 because obj indices start at 1 not 0
+                        pos_index = int(vertdat[0])-1
+                        # Append Vertex Data
+                        self.vertices.append( objverts[pos_index*3] )
+                        self.vertices.append( objverts[pos_index*3+1] )
+                        self.vertices.append( objverts[pos_index*3+2] )
+
+                        tex_index = int(vertdat[1])-1
+                        self.vertices.append( objtexcoords[tex_index*2] )
+                        self.vertices.append( objtexcoords[tex_index*2+1] )
+                    else:
+                        self.faces.append(defined_verts[vertex])
+
+
+
+
+class Cube:
+    def __init__(self):
+
+        self.verts = (1.0, 1.0, 1.0,
+                      1.0, 1.0, 0.0,
+                      1.0, 0.0, 0.0,
+                      1.0, 0.0, 1.0,
+                      0.0, 1.0, 1.0,
+                      0.0, 0.0, 0.0,
+                      0.0, 0.0, 1.0,
+                      0.0, 1.0, 0.0,
+                      )
+        self.faces = (0,3,6,4,
+                      2,5,6,3,
+                      1,2,5,7,
+                      1,0,4,7,
+                      7,4,6,5,
+                      2,3,0,1,
+
+                    )
+
+
+        self.face_arr = array("i", self.faces).tobytes()
+        self.vert_arr = array("f", self.verts).tobytes()
+
+        self.vbo = glGenBuffers(1)
+        self.ebo = glGenBuffers(1)
+        self.vao = glGenVertexArrays(1)
+
+        # set the current vao, which holds the vbo and ebo settings (for later use)
+        glBindVertexArray(self.vao)
+        # Setup the vbo which holds all vertices
+        glBindBuffer(GL_ARRAY_BUFFER, self.vbo) # make the vbo the current buffer
+        glBufferData(GL_ARRAY_BUFFER, len(self.verts) * 4, self.vert_arr, GL_STATIC_DRAW) # give our vertices to the vbo
+        # setup the ebo which holds data for which vertices belong to which faces (so one vertex can be in multiple faces)
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.ebo) # make the ebo the current buffer
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, len(self.faces)*4, self.face_arr, GL_STATIC_DRAW) # give our data to the ebo
+
+        # Enable the position attribute (for drawing)
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*4, c_void_p(0))
+        glEnableVertexAttribArray(0)
+
+    def draw(self):
+        glBindVertexArray(self.vao)
+        #glDrawArrays(GL_QUADS, 0, 4)
+        glDrawElements(GL_QUADS, len(self.faces), GL_UNSIGNED_INT, None)
+        #glBindVertexArray(0)
+
+class Mesh:
+    def __init__(self, file):
+        self.scene = Obj(file)
+        self.verts = self.scene.vertices
+        self.faces = self.scene.faces
+
+        self.vert_arr = array("f", self.verts).tobytes()
+        self.face_arr = array("i", self.faces).tobytes()
+
+        print(self.verts)
+        print()
+        print(self.faces)
+
+        self.vao = glGenVertexArrays(1)
+        self.vbo = glGenBuffers(1)
+        self.ebo = glGenBuffers(1)
+
+        glBindVertexArray(self.vao)
+        glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
+        glBufferData(GL_ARRAY_BUFFER, len(self.verts) * 4, self.vert_arr, GL_STATIC_DRAW)
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.ebo) # make the ebo the current buffer
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, len(self.faces)*4, self.face_arr, GL_STATIC_DRAW)
+
+        # Position attribute
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*4, c_void_p(0))
+        glEnableVertexAttribArray(0)
+
+        # texture attribute
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5*4, c_void_p(3*4))
+        glEnableVertexAttribArray(2)
+
+    def draw(self):
+        glBindTexture(GL_TEXTURE_2D, happy_tex)
+        glBindVertexArray(self.vao)
+        glDrawElements(GL_QUADS, len(self.faces), GL_UNSIGNED_INT, None)
+        #glDrawArrays(GL_QUADS, 0, len(self.verts))
+        #glBindVertexArray(0)
 
 class Sprite:
     def __init__(self):
@@ -124,7 +280,7 @@ class Sprite:
         self.vert_arr = array("f", self.verts).tobytes()
         self.vbo = glGenBuffers(1)
         self.vao = glGenVertexArrays(1)
-        self.tex = loadTexture("sprites/car.png")
+        self.tex = car_tex
 
 
         glBindVertexArray(self.vao)
@@ -173,13 +329,13 @@ def solidCube():
 
 
 def main():
-    pg.init()
-    display = (640, 480)
-    pg.display.set_mode(display, DOUBLEBUF|OPENGL)
+    clock = pg.time.Clock()
 
     shader = Shader("shaders/vertex.shader", "shaders/fragment.shader")
 
     s = Sprite()
+    m = Mesh("models/arch.obj")
+    c = Cube()
 
 
     proj = glm.perspective(glm.radians(45.0), display[0]/display[1], 0.1, 100.0)
@@ -221,7 +377,7 @@ def main():
         if keys[pg.K_z]:
             z -= 0.1
 
-        #r += 0.1
+        r += 0.01
 
 
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
@@ -252,12 +408,14 @@ def main():
 
 
         model = glm.mat4(1.0)
-        model = glm.rotate(model, glm.radians(-55.0), glm.vec3(1.0, 0.0, 0.0))
-        model = glm.translate(model, glm.vec3(x, y, z))
+        model = glm.rotate(model, r, glm.vec3(0.1, 1.0, 0.0))
+        model = glm.scale(model, glm.vec3(0.5, 0.5, 0.5))
+
 
         view = glm.mat4(1.0)
         # note that we're translating the scene in the reverse direction of where we want to move
-        view = glm.translate(view, glm.vec3(0.0, 0.0, -3.0))
+        view = glm.translate(view, glm.vec3(x, y, z))
+        view = glm.translate(view, glm.vec3(0.0, 0.0, -5.0))
 
         glUseProgram(shader.ID)
 
@@ -270,13 +428,15 @@ def main():
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm.value_ptr(proj) )
 
 
-        s.draw(shader.ID)
+        #s.draw(shader.ID)
+        m.draw()
+        #c.draw()
         #glPopMatrix()
         #glUseProgram(0)
 
         #wireCube()
         pg.display.flip()
-        pg.time.wait(10)
+        clock.tick(60)
 
 if __name__ == "__main__":
     main()
