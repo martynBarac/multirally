@@ -44,6 +44,8 @@ class Entity:
             # print(self.data_table[__id].var)
 
     def apply_data_table_lerp(self, snapshots, starttime, curtime):
+
+
         for _id in snapshots[0]:
             __id = int(_id)
             if self.data_table[__id].lerp and _id in snapshots[1]:

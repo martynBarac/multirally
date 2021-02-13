@@ -78,6 +78,36 @@ class World:
         data_table["NEW"] = new_ents
         return data_table
 
+    def send_delta_gamestate(self):
+        data_table = {}
+        for _id in self.entdict:
+            ent = self.entdict[_id]
+            if ent != None:
+                if type(ent) == Player:
+                    client = self.player_table[ent]
+                    if client in client_input_table:
+                        actions = client_input_table[client]
+                    else:
+                        actions = {'1': False, '2': False, '3': False, '4': False}
+                    ent_data_table = ent.update(self, actions)
+                else:
+                    ent_data_table = ent.update(self)
+                    if ent.ent_destroyed:
+                        self.destroy_entity(_id)
+
+                if ent.updated:
+                    data_table[_id] = ent_data_table
+                    ent.updated = False
+
+                if self.create_ents:
+                    data_table["NEW"] = self.create_ents
+                    self.create_ents = []
+
+                if self.delete_ents:
+                    data_table["DEL"] = self.delete_ents
+                    self.delete_ents = []
+        return data_table
+
     def update(self, client_input_table):
         """This function should return any entities that are updated"""
 
