@@ -19,7 +19,7 @@ from array import array
 from ctypes import *
 
 import glm #pip install pyglm
-import pywavefront #pip install pywavefront
+#import pywavefront #pip install pywavefront
 
 
 
@@ -130,6 +130,7 @@ class Obj:
         defined_verts = {}
         objverts = []
         objtexcoords = []
+        objnormals = []
         curr_index = 0
 
         for line in data:
@@ -140,6 +141,10 @@ class Obj:
             if list[0] == "vt": # Texture coord
                 for texcoord in list[1:]:
                     objtexcoords.append(float(texcoord))
+            if list[0] == "vn": # Normal
+                for normal in list[1:]:
+                    objnormals.append(float(normal))
+
 
             if list[0] == "f": # face
 
@@ -174,6 +179,12 @@ class Obj:
                         tex_index = int(vertdat[1])-1
                         self.vertices.append( objtexcoords[tex_index*2] )
                         self.vertices.append( objtexcoords[tex_index*2+1] )
+
+                        norm_index = int(vertdat[2])-1
+                        self.vertices.append( objnormals[norm_index*3] )
+                        self.vertices.append( objnormals[norm_index*3+1] )
+                        self.vertices.append( objnormals[norm_index*3+2] )
+
                     else:
                         self.faces.append(defined_verts[vertex])
 
@@ -253,12 +264,14 @@ class Mesh:
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, len(self.faces)*4, self.face_arr, GL_STATIC_DRAW)
 
         # Position attribute
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*4, c_void_p(0))
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*4, c_void_p(0))
         glEnableVertexAttribArray(0)
 
         # texture attribute
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5*4, c_void_p(3*4))
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8*4, c_void_p(3*4))
         glEnableVertexAttribArray(2)
+
+        
 
     def draw(self):
         glBindTexture(GL_TEXTURE_2D, happy_tex)
