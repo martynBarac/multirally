@@ -68,7 +68,7 @@ class Player(entity.Entity):
         speed = math.sqrt(self.xvel**2 + self.yvel**2)
         direction = math.atan2(self.yvel, self.xvel)
 
-        fric = speed*0.05
+        fric = speed*0.0015
         centripmax = 2
         centripForce = -math.sin(self.angle+direction) * centripmax
         # print("dir:", math.degrees(direction))
@@ -104,8 +104,12 @@ class Player(entity.Entity):
         if players_colliding:
             # Find what my velocity is with momentum transfer
             for player in players_colliding:
+                xv = self.xvel
+                yv = self.yvel
                 self.xvel = player.xvel
                 self.yvel = player.yvel
+                player.xvel = xv
+                player.yvel = yv
 
         walls = self.check_wall_col(lvl0, False, self.xpos, self.ypos)
 
