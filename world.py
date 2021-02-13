@@ -14,9 +14,8 @@ class World:
         self.snapshots = [] # Holds entdicts from last 10 frames [oldest frame, ..., newest frame]
         self.create_ents = [] # a list of any ents that were created
         self.delete_ents = [] # a list of ents that need to be deleted
-
-
-
+        self.collision_sectors = [[]]
+        self.collision_sector_size = 256
 
     def add_new_player(self, client, name):
         spawnx, spawny = self.level["spawn"][0] # Get first spawn point

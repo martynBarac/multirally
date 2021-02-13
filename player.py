@@ -37,6 +37,7 @@ class Player(entity.Entity):
         self.angle = angle
 
         self.health = 100
+        self.mass = 10
         self.topSpeed = 10
         self.engine_power = 1.
         self.colour = (255, 255, 255)
@@ -99,6 +100,13 @@ class Player(entity.Entity):
         # self.ypos = self.ypos%150000
 
         # COLLISION
+        players_colliding = self.check_player_col(world)
+        if players_colliding:
+            # Find what my velocity is with momentum transfer
+            for player in players_colliding:
+                self.xvel = player.xvel
+                self.yvel = player.yvel
+
         walls = self.check_wall_col(lvl0, False, self.xpos, self.ypos)
 
         if walls: # Check if it hit anything
@@ -156,6 +164,14 @@ class Player(entity.Entity):
             return walls
         return False
 
+    def check_player_col(self, world):
+        collided_players = []
+        for player in world.player_table:
+            if player != self:
+                if self.rect_col([self.xpos, self.ypos, self.w, self.h],
+                                 [player.xpos, player.ypos, player.w, player.h]):
+                    collided_players.append(player)
+        return collided_players
 
 class CPlayer(entity.CEntity):
 
@@ -170,7 +186,7 @@ class CPlayer(entity.CEntity):
         self.colour = (128, 128, 128)
         self.rotimage = self.orgimage.copy()
 
-    def update(self):
+    def update(self, world=None ,actions=None):
         if self.netcolour.var != self.colour:
             self.colour = self.netcolour.var
             self.orgimage = pg.image.load("sprites/car.png").convert_alpha()

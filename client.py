@@ -134,11 +134,13 @@ while not game_over:
     if data is not None:
         camfollowing = data
 
+
     msgs = my_client.read_unread_messages()
     for msg in msgs:
         data = do_thing_with_message()
         if data is not None:
             camfollowing = data
+
         print("yea")
 
     # Draw everything
@@ -154,5 +156,3 @@ while not game_over:
 
     dt = clock.tick(FRAMERATE/2)
     pg.display.update()
-
-
