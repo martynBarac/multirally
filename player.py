@@ -127,7 +127,7 @@ class Player(entity.Entity):
         self.netxpos.set(self.xpos, True)
         self.netypos.set(self.ypos, True)
         self.netangle.set(self.angle, True)
-        return None
+        return self.prepare_data_table()
 
     def rect_col(self, rect1, rect2):
         # not to the right and not to the left
