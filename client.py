@@ -8,13 +8,15 @@ import entity_table
 import game
 import sys
 
-
-
 SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
+"""
 if len(sys.argv) >= 2:
-    addr = sys.argv[1]
+    addr = "110.33.73.252:27014"
 else:
-    addr =  socket.gethostbyname(socket.gethostname() )
+    addr = socket.gethostbyname(socket.gethostname())
+"""
+
+addr = socket.gethostbyname(socket.gethostname())
 
 addr = addr.split(":")
 if len(addr) > 1:

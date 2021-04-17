@@ -7,6 +7,9 @@ class Entity:
         self.ent_destroyed = False
         self.data_table = {}
         self.updated = True
+        # If the entity is an actor then it should have x and y netvars and be displayed in the world
+        # By convention call x netxpos and y netypos in your actor
+        self.actor = True
         pass
 
     def update(self, world):

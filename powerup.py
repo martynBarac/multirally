@@ -6,16 +6,16 @@ class Powerup(entity.Entity):
     def __init__(self, x=50, y=50, typ=0):
         entity.Entity.__init__(self)
         self.class_id = 2
-        self.xpos = NetworkVar(self, x, 1)
-        self.ypos = NetworkVar(self, y, 2)
+        self.netxpos = NetworkVar(self, x, 1)
+        self.netxpos = NetworkVar(self, y, 2)
         self.type = NetworkVar(self, typ, 0)
         self.w = 8
         self.h = 8
 
     def check_col(self, world):
         for player in world.player_table:
-            if player.xpos < self.xpos.var + self.w and player.xpos + player.w > self.xpos.var:
-                if player.ypos < self.ypos.var + self.h and player.ypos + player.h > self.ypos.var:
+            if player.xpos < self.netxpos.var + self.w and player.xpos + player.w > self.netxpos.var:
+                if player.ypos < self.netxpos.var + self.h and player.ypos + player.h > self.netxpos.var:
                     # There is a collision
 
                     # Give powerup

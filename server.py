@@ -64,7 +64,7 @@ class Server:
                 self.network_dict[s].send_msg(gamestate)
                 self.new_clients.remove(s)
             else:
-                self.network_dict[s].send_msg(self.data_table)
+                self.network_dict[s].send_msg(self.data_table[s])
 
         # Start updating world
         self.data_table = self.world.update(self.client_input_table)

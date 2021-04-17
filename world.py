@@ -82,6 +82,9 @@ class World:
         for _id in self.entdict:
             ent = self.entdict[_id]
             if ent != None:
+                if ent.actor: #If our ent is an actor then skip it if too far
+                    pass
+
                 if type(ent) == Player:
                     client = self.player_table[ent]
                     if client in client_input_table:
@@ -141,4 +144,19 @@ class World:
                 if self.delete_ents:
                     data_table["DEL"] = self.delete_ents
                     self.delete_ents = []
-        return data_table
+
+        #Now we have to optimise badwidth by removing far away actors
+        client_data_table = {}
+        for player in self.player_table:
+            client = self.player_table[player]
+            client_data_table[client] = data_table.copy()
+            for _id in data_table:
+                if _id in self.entdict:
+                    entity = self.entdict[_id]
+                    if entity != player:
+                        if entity.actor:
+                            if abs(entity.netxpos.var - player.netxpos.var) > 640 or \
+                                    abs(entity.netxpos.var - player.netxpos.var) > 480:
+                                del client_data_table[client][_id]
+
+        return client_data_table
