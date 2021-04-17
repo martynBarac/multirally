@@ -64,50 +64,17 @@ class World:
                 print("GOT CAM")
                 return player._id
 
-    def send_entire_gamestate(self):
+    def send_entire_gamestate(self, client):
         data_table = {}
         new_ents = []
         print(self.entdict)
         for _id in self.entdict:
             ent = self.entdict[_id]
             if ent != None:
-                ent_data_table = ent.prepare_data_table(True)
+                ent_data_table = ent.prepare_data_table(client, True)
                 data_table[_id] = ent_data_table
                 new_ents.append((ent.class_id, _id))
         data_table["NEW"] = new_ents
-        return data_table
-
-    def send_delta_gamestate(self):
-        data_table = {}
-        for _id in self.entdict:
-            ent = self.entdict[_id]
-            if ent != None:
-                if ent.actor: #If our ent is an actor then skip it if too far
-                    pass
-
-                if type(ent) == Player:
-                    client = self.player_table[ent]
-                    if client in client_input_table:
-                        actions = client_input_table[client]
-                    else:
-                        actions = {'1': False, '2': False, '3': False, '4': False}
-                    ent_data_table = ent.update(self, actions)
-                else:
-                    ent_data_table = ent.update(self)
-                    if ent.ent_destroyed:
-                        self.destroy_entity(_id)
-
-                if ent.updated:
-                    data_table[_id] = ent_data_table
-                    ent.updated = False
-
-                if self.create_ents:
-                    data_table["NEW"] = self.create_ents
-                    self.create_ents = []
-
-                if self.delete_ents:
-                    data_table["DEL"] = self.delete_ents
-                    self.delete_ents = []
         return data_table
 
     def update(self, client_input_table):
@@ -117,46 +84,51 @@ class World:
         if len(self.snapshots) > 10:
             self.snapshots.pop(0)
 
-        data_table = {}
+        #Update all the entities
         for _id in self.entdict:
             ent = self.entdict[_id]
-            if ent != None:
+            if ent is not None:
+
                 if type(ent) == Player:
                     client = self.player_table[ent]
                     if client in client_input_table:
                         actions = client_input_table[client]
                     else:
                         actions = {'1': False, '2': False, '3': False, '4': False}
-                    ent_data_table = ent.update(self, actions)
+                    ent.update(self, actions)
                 else:
-                    ent_data_table = ent.update(self)
+                    ent.update(self)
                     if ent.ent_destroyed:
                         self.destroy_entity(_id)
 
-                if ent.updated:
-                    data_table[_id] = ent_data_table
-                    ent.updated = False
-
-                if self.create_ents:
-                    data_table["NEW"] = self.create_ents
-                    self.create_ents = []
-
-                if self.delete_ents:
-                    data_table["DEL"] = self.delete_ents
-                    self.delete_ents = []
-
-        #Now we have to optimise badwidth by removing far away actors
+        #Now prepare a data table for each client to send
         client_data_table = {}
         for player in self.player_table:
             client = self.player_table[player]
-            client_data_table[client] = data_table.copy()
-            for _id in data_table:
-                if _id in self.entdict:
-                    entity = self.entdict[_id]
-                    if entity != player:
-                        if entity.actor:
-                            if abs(entity.netxpos.var - player.netxpos.var) > 640 or \
-                                    abs(entity.netxpos.var - player.netxpos.var) > 480:
-                                del client_data_table[client][_id]
+            data_table = {}
+            for _id in self.entdict:
+                ent = self.entdict[_id]
+                if ent is not None:
+                    ent_data_table = ent.prepare_data_table(client)
 
+                    if ent.get_updated(client):
+                        if ent.actor and ent != player:
+                            if abs(ent.netxpos.var - player.netxpos.var) < 320 \
+                                    or abs(ent.netypos.var - player.netypos.var) < 240:
+
+                                data_table[_id] = ent_data_table
+                                ent.updated[client] = False
+                        else:
+                            data_table[_id] = ent_data_table
+                            ent.updated[client] = False
+
+                    if self.create_ents:
+                        data_table["NEW"] = self.create_ents
+
+                    if self.delete_ents:
+                        data_table["DEL"] = self.delete_ents
+            client_data_table[client] = data_table
+
+        self.create_ents = []
+        self.delete_ents = []
         return client_data_table

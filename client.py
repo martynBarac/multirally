@@ -70,9 +70,10 @@ def do_thing_with_message():
             del (msg['NEW'])  # Delete the "NEW" stuff because we don't need it ever again
 
         if 'DEL' in msg:
-            for _id in msg['DEL']:
-                print("Deleted entity", entity_dict[str(_id)])
-                del (entity_dict[str(_id)])
+            for _id2 in msg['DEL']:
+                if str(_id2) in entity_dict:
+                    print("Deleted entity", entity_dict[str(_id2)])
+                    del (entity_dict[str(_id2)])
             del (msg['DEL'])
 
         # This way of doing the camera should be changed to save bandwidth

@@ -7,7 +7,7 @@ class Powerup(entity.Entity):
         entity.Entity.__init__(self)
         self.class_id = 2
         self.netxpos = NetworkVar(self, x, 1)
-        self.netxpos = NetworkVar(self, y, 2)
+        self.netypos = NetworkVar(self, y, 2)
         self.type = NetworkVar(self, typ, 0)
         self.w = 8
         self.h = 8
@@ -27,7 +27,7 @@ class Powerup(entity.Entity):
 
     def update(self, world):
         self.check_col(world)
-        return self.prepare_data_table()
+        return None
 
 
 class CPowerup(entity.CEntity):

@@ -53,18 +53,18 @@ class Server:
                     writeable.remove(s)
                     self.world.destroy_player(s)
 
-
         for s in writeable:
             if s in self.new_clients:
                 pid = self.world.get_camera_for_player(s)
-                gamestate = self.world.send_entire_gamestate()
+                gamestate = self.world.send_entire_gamestate(s)
                 if pid is not None:
                     gamestate["CAM"] = pid
                 gamestate["LEV"] = self.world.level_name
                 self.network_dict[s].send_msg(gamestate)
                 self.new_clients.remove(s)
             else:
-                self.network_dict[s].send_msg(self.data_table[s])
+                if s in self.data_table:
+                    self.network_dict[s].send_msg(self.data_table[s])
 
         # Start updating world
         self.data_table = self.world.update(self.client_input_table)
