@@ -1,5 +1,6 @@
 import player
 import powerup
+import entities
 
 entity_table = {
 #  id: ( Serverclass , Clientclass   )

@@ -15,7 +15,7 @@ class Powerup(entity.Entity):
     def check_col(self, world):
         for player in world.player_table:
             if player.xpos < self.netxpos.var + self.w and player.xpos + player.w > self.netxpos.var:
-                if player.ypos < self.netxpos.var + self.h and player.ypos + player.h > self.netxpos.var:
+                if player.ypos < self.netypos.var + self.h and player.ypos + player.h > self.netypos.var:
                     # There is a collision
 
                     # Give powerup

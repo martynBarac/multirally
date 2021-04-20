@@ -51,6 +51,7 @@ st = time.perf_counter()
 start_time2 = [st]
 snapshots = []
 msg = None
+static_ents = [] # Entities that are static in the level
 
 class Dat:
     lvl = {"wall":[]}
@@ -83,6 +84,9 @@ def do_thing_with_message():
 
         if 'LEV' in msg:
             Dat.lvl = game.load_level(msg['LEV'])
+            if "LaserWall" in Dat.lvl:
+                for lw in Dat.lvl["LaserWall"]:
+                    static_ents.append(entity_table.entities.CLaserWall(lw[0], lw[1], lw[2], lw[3]))
             del msg['LEV']
 
         snapshots.append(msg)
@@ -153,6 +157,9 @@ while not game_over:
         if camfollowing:
             cam = (camfollowing.netxpos.var-SCREEN_WIDTH//2, camfollowing.netypos.var-SCREEN_HEIGHT//2)
         entity_dict[_id].draw(pg, screen, cam)
+
+    for prop in static_ents:
+        prop.draw(pg, screen, cam)
 
     for wall in Dat.lvl["wall"]:
         pg.draw.rect(screen, (255, 255, 255), [wall[0]-cam[0], wall[1]-cam[1], wall[2], wall[3]])

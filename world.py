@@ -8,8 +8,15 @@ class World:
     def __init__(self, level_name):
         self.player_table = {} # Holds all players {Class: client, ...}
         self.entdict = {} # Holds all entities {id: Class}
+        self.static_entities = [] #Entities that are static in the level
         self.level = game.load_level(level_name)
         self.level_name = level_name
+
+        # Todo refactor static entities as their own thing
+        if "LaserWall" in self.level:
+            for lw in self.level["LaserWall"]:
+                self.add_new_static_entity(entity_table.entities.LaserWall(lw[0], lw[1], lw[2], lw[3]))
+
         self.dt = 1.5
         self.snapshots = [] # Holds entdicts from last 10 frames [oldest frame, ..., newest frame]
         self.create_ents = [] # a list of any ents that were created
@@ -47,9 +54,12 @@ class World:
         self.create_ents.append((entity.class_id, key))
         self.entdict[key] = entity
 
+    def add_new_static_entity(self, entity):
+        self.static_entities.append(entity)
+
     def destroy_entity(self, _id):
         self.delete_ents.append(_id)
-        #del(self.entdict[_id])
+        # del(self.entdict[_id])
         self.entdict[_id] = None
 
     def update_existing_entity(self, entid, newent):
@@ -100,6 +110,10 @@ class World:
                     ent.update(self)
                     if ent.ent_destroyed:
                         self.destroy_entity(_id)
+
+        #Update static entities
+        for sEnt in self.static_entities:
+            sEnt.update(self)
 
         #Now prepare a data table for each client to send
         client_data_table = {}
