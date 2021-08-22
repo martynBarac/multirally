@@ -21,6 +21,7 @@ class Server:
 
         self.network_dict = {}
         self.client_input_table = {}
+        self.client_last_action_number = {}
         self.sock.listen(self.MAXPLAYERS)
 
         self.data_table = {}
@@ -29,6 +30,7 @@ class Server:
 
     def update(self):
         readable, writeable, exception = select.select(self.maybe_readable, self.maybe_writeable, self.maybe_readable)
+        start_time = time.perf_counter()
         for s in readable:
             if s == self.sock:
                 conn, addr = s.accept()
@@ -43,9 +45,11 @@ class Server:
                 try:
                     msg = self.network_dict[s].receive_msg() # Get the client inputs
                     self.client_input_table[s] = msg
+                    self.client_last_action_number[s] = msg['a']
                     messages = self.network_dict[s].read_unread_messages() # Get more if the client sent lots at a time
                     for message in messages:
                         self.client_input_table[s] = message
+                        self.client_last_action_number[s] = message['a']
                 except ConnectionResetError:
                     del(self.network_dict[s])
                     self.maybe_readable.remove(s)
@@ -64,8 +68,12 @@ class Server:
                 self.new_clients.remove(s)
             else:
                 if s in self.data_table:
+                    if s in self.client_last_action_number:
+                        self.data_table[s]["ACT"] = self.client_last_action_number[s]
                     self.network_dict[s].send_msg(self.data_table[s])
 
         # Start updating world
         self.data_table = self.world.update(self.client_input_table)
+        self.world.dt = (time.perf_counter()-start_time)*3000
+        print(self.world.dt)
 
