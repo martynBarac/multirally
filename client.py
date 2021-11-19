@@ -113,7 +113,7 @@ def do_thing_with_message(_world):
 
         server_action_numbers.append(last_action)
         snapshots.append(msg)
-        if len(snapshots) > 10: #Snapshot Buffer
+        if len(snapshots) > 2: #Snapshot Buffer
             snapshots.pop(0)
             server_action_numbers.pop(0)
 
@@ -211,7 +211,7 @@ while not game_over:
                             latency += action["TIME"] - oldaction["TIME"]
                             client_prediction_world.dt = (action["TIME"] - oldaction["TIME"])*10
                         else:
-                            dt2 = (time.perf_counter() - delta_time_start) * 10
+                            dt2 = (time.perf_counter()-delta_time_start) * 10
                             client_prediction_world.dt = dt2
                             delta_time_start = time.perf_counter()
                         # Apply the prediction
