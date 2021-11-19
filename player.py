@@ -22,7 +22,7 @@ class Player(entity.Entity):
         self.netypos = NetworkVar(self, y, 2)
         self.netypos.quantise = 2
         self.netangle = NetworkVar(self, y, 3)
-        self.netangle.quantise = 3
+        self.netangle.quantise = 6
         self.netcolour = NetworkVar(self, (255, 255, 0), 4)
 
         self.xpos = x
@@ -33,20 +33,20 @@ class Player(entity.Entity):
         self.xvel = 0
         self.yvel = 0
         self.netxvel = NetworkVar(self, self.xvel, 5)
-        self.netxvel.quantise = 0
+        self.netxvel.quantise = 2
         self.netxvel.only_send_to_owner = True
         self.netyvel = NetworkVar(self, self.yvel, 6)
-        self.netyvel.quantise = 0
+        self.netyvel.quantise = 2
         self.netyvel.only_send_to_owner = True
 
         self.xacc = 0
         self.yacc = 0
         self.netxacc = NetworkVar(self, 0, 7)
         self.netyacc = NetworkVar(self, 0, 8)
-        self.netxacc.quantise = 0
+        self.netxacc.quantise = 3
         self.netxacc.only_send_to_owner = True
 
-        self.netyacc.quantise = 0
+        self.netyacc.quantise = 3
         self.netyacc.only_send_to_owner = True
 
         self.angle = angle
@@ -66,14 +66,20 @@ class Player(entity.Entity):
 
         # Do actions
         throttle = 0
+        self.yvel = 0
+        self.xvel = 0
         if actions[UPARROW]:
             throttle = self.engine_power
+            self.yvel = -8
         if actions[DOWNARROW]:
             throttle = -self.engine_power/2
+            self.yvel = 8
         if actions[LEFTARROW]:
             self.angle += 0.2*dt
+            self.xvel = -8
         if actions[RIGHTARROW]:
             self.angle -= 0.2*dt
+            self.xvel = 8
 
         maxfric = 0.5
 
@@ -96,11 +102,12 @@ class Player(entity.Entity):
             fcx = centripForce * math.sin(self.angle)
             fcy = -centripForce * math.cos(self.angle)
 
-        self.xacc = - fric*math.cos(self.angle) + throttle*math.cos(self.angle) + fcx
-        self.yacc = fric*math.sin(self.angle) - throttle*math.sin(self.angle) - fcy
-
-        self.xvel += self.xacc*dt
-        self.yvel += self.yacc*dt
+        #self.xacc = - fric*math.cos(self.angle) + throttle*math.cos(self.angle) + fcx
+        #self.yacc = fric*math.sin(self.angle) - throttle*math.sin(self.angle) - fcy
+        #self.xacc = throttle * math.cos(self.angle)
+        #self.yacc = -throttle * math.sin(self.angle)
+        #self.xvel += self.xacc*dt
+        #self.yvel += self.yacc*dt
 
         #self.xvel = round(self.xvel, 4)
         #self.yvel = round(self.yvel, 4)
@@ -108,8 +115,8 @@ class Player(entity.Entity):
         self.xpos += self.xvel*dt
         self.ypos += self.yvel*dt
 
-        #self.xpos = round(self.xpos, 10)
-        #self.ypos = round(self.ypos, 10)
+        #self.xpos = round(self.xpos, 0)
+        #self.ypos = round(self.ypos, 0)
 
         # self.xpos = self.xpos%150000
         # self.ypos = self.ypos%150000

@@ -27,10 +27,9 @@ class Server:
         self.data_table = {}
 
         self.new_clients = []
-
+        self.start_time = 0
     def update(self):
         readable, writeable, exception = select.select(self.maybe_readable, self.maybe_writeable, self.maybe_readable)
-        start_time = time.perf_counter()
         for s in readable:
             if s == self.sock:
                 conn, addr = s.accept()
@@ -72,10 +71,11 @@ class Server:
                         self.data_table[s]["ACT"] = self.client_last_action_number[s]
                     self.network_dict[s].send_msg(self.data_table[s])
 
-        time.sleep(1 / 8)
+        time.sleep(1 / 32)
         # Start updating world
         self.data_table = self.world.update(self.client_input_table)
-        self.world.dt = (time.perf_counter()-start_time)*10
+        self.world.dt = (time.perf_counter()-self.start_time)*10
+        self.start_time = time.perf_counter()
         print(self.world.dt)
 
 

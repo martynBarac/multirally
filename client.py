@@ -9,6 +9,8 @@ import game
 import sys
 import numpy as np
 import world
+import winsound
+
 
 SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 """
@@ -111,7 +113,7 @@ def do_thing_with_message(_world):
 
         server_action_numbers.append(last_action)
         snapshots.append(msg)
-        if len(snapshots) > 2: #Snapshot Buffer
+        if len(snapshots) > 10: #Snapshot Buffer
             snapshots.pop(0)
             server_action_numbers.pop(0)
 
@@ -132,23 +134,30 @@ def do_thing_with_message(_world):
     return cf, server_action_numbers[0], _world
 
 
+_once = True
+delta_time_start = time.perf_counter()
+time_to_correct_position = time.perf_counter()
+client_actions = ACTIONS.copy()
 while not game_over:
     # Handle client inputs
     for event in pg.event.get():
         if event.type == pg.QUIT:
             game_over = True
-
-    client_actions = ACTIONS.copy()
-    keyboard_inputs = pg.key.get_pressed()
-    if keyboard_inputs[pg.K_LEFT]:
-        client_actions[LEFTARROW] = True
-    if keyboard_inputs[pg.K_RIGHT]:
-        client_actions[RIGHTARROW] = True
-    if keyboard_inputs[pg.K_UP]:
-        client_actions[UPARROW] = True
-    if keyboard_inputs[pg.K_DOWN]:
-        client_actions[DOWNARROW] = True
-    if client_actions != old_client_actions and time.perf_counter() - start_time > 0.01:
+    if time.perf_counter() - start_time > 0.00001:
+        client_actions = ACTIONS.copy()
+        keyboard_inputs = pg.key.get_pressed()
+        if keyboard_inputs[pg.K_LEFT]:
+            client_actions[LEFTARROW] = True
+        if keyboard_inputs[pg.K_RIGHT]:
+            client_actions[RIGHTARROW] = True
+        if keyboard_inputs[pg.K_UP]:
+            client_actions[UPARROW] = True
+        if keyboard_inputs[pg.K_DOWN]:
+            client_actions[DOWNARROW] = True
+    else:
+        stuff = client_actions.copy()
+        client_actions = stuff
+    if client_actions != old_client_actions and time.perf_counter() - start_time > 0.00001:
         old_client_actions = client_actions.copy()
         action_number += 1
         print("SEND", action_number)
@@ -161,49 +170,61 @@ while not game_over:
     client_actions["TIME"] = time.perf_counter()
     action_history = np.append(action_history, client_actions)
     if camfollowing:
-
-        old_xpos = client_prediction_car.xpos
-        old_ypos = client_prediction_car.ypos
-        client_prediction_car.angle = camfollowing.netangle.var
-        client_prediction_car.xpos = camfollowing.netxpos.var
-        client_prediction_car.ypos = camfollowing.netypos.var
-        client_prediction_car.xvel = camfollowing.netxvel.var
-        client_prediction_car.yvel = camfollowing.netyvel.var
-        client_prediction_car.xacc = camfollowing.netxacc.var
-        client_prediction_car.yacc = camfollowing.netyacc.var
+        if _once or time.perf_counter() - time_to_correct_position > 0.001:
+            old_xpos = client_prediction_car.xpos
+            old_ypos = client_prediction_car.ypos
+            client_prediction_car.angle = camfollowing.netangle.var
+            client_prediction_car.xpos = camfollowing.netxpos.var
+            client_prediction_car.ypos = camfollowing.netypos.var
+            client_prediction_car.xvel = camfollowing.netxvel.var
+            client_prediction_car.yvel = camfollowing.netyvel.var
+            client_prediction_car.xacc = camfollowing.netxacc.var
+            client_prediction_car.yacc = camfollowing.netyacc.var
+            _once = False
     # Client prediction
     if client_prediction_world is not None and server_last_action is not None:
         # Apply new thing and do last action
         done = False
         latency = 0
         oldaction = None
-        for action in action_history:
-            # Only predict actions that are after the last action recieved
-            if action['a'] >= server_last_action:
-                if not done:
-                    latency = server_reaction_time - action["TIME"] # When we press a key, how long until the server responds?
-                    done = True
-                # We want to predict how long the server thinks we have been pressing the button down
-                # And exclude calculating part the server already knows about
-                if action["TIME"]+ latency >= time.perf_counter():
-                    delta_time_start = time.perf_counter()
-                    # Calculate delta time
-                    if oldaction is not None:
-                        client_prediction_world.dt = (action["TIME"] - oldaction["TIME"])*10
-                    else:
-                        client_prediction_world.dt = dt2*10
-                    # Apply the prediction
-                    client_prediction_car.update(client_prediction_world, action)
-                    dt2 = (time.perf_counter() - delta_time_start)
-                else:
-                    del action # Get rid of actions the server has already responded to
-            else:
-                del action
-            try:
-                oldaction = action
-            except NameError:
-                oldaction = None
+        if time.perf_counter() - time_to_correct_position < 0.001:
+            dt2 = (time.perf_counter() - delta_time_start)
+            delta_time_start = time.perf_counter()
+            client_prediction_world.dt = dt2 * 10
+            client_prediction_car.update(client_prediction_world, client_actions)
+        else:
+            time_to_correct_position = time.perf_counter()
+           # print(len(action_history))
+            for action in action_history:
+                # Only predict actions that are after the last action recieved
+                if action['a'] >= server_last_action:
+                    if not done:
+                        latency = server_reaction_time - action["TIME"] # When we press a key, how long until the server responds?
+                        done = True
+                    # We want to predict how long the server thinks we have been pressing the button down
+                    # And exclude calculating part the server already knows about
+                    if action["TIME"]+ latency > time.perf_counter():
+                        #delta_time_start = time.perf_counter()
+                        # Calculate delta time
 
+                        if oldaction is not None:
+                            latency += action["TIME"] - oldaction["TIME"]
+                            client_prediction_world.dt = (action["TIME"] - oldaction["TIME"])*10
+                        else:
+                            dt2 = (time.perf_counter() - delta_time_start) * 10
+                            client_prediction_world.dt = dt2
+                            delta_time_start = time.perf_counter()
+                        # Apply the prediction
+                        client_prediction_car.update(client_prediction_world, action)
+
+                    else:
+                        del action # Get rid of actions the server has already responded to
+                else:
+                    del action
+                try:
+                    oldaction = action
+                except NameError:
+                    oldaction = None
     try:
         msg = my_client.receive_msg()
     except BlockingIOError:
@@ -230,8 +251,9 @@ while not game_over:
     for _id in entity_dict:
         entity_dict[_id].update()
         if camfollowing:
-
-            cam = (camfollowing.netxpos.var-SCREEN_WIDTH//2, camfollowing.netypos.var-SCREEN_HEIGHT//2)
+            cam = (0,0)
+            #cam = (camfollowing.netxpos.var-SCREEN_WIDTH//2, camfollowing.netypos.var-SCREEN_HEIGHT//2)
+            #cam = (client_prediction_car.xpos - SCREEN_WIDTH // 2, client_prediction_car.ypos - SCREEN_HEIGHT // 2)
         entity_dict[_id].draw(pg, screen, cam)
 
     for prop in static_ents:
@@ -255,5 +277,4 @@ while not game_over:
 
     predictor_end_x = math.cos(predictor_line_angle)*50+predictor_add_x
     predictor_end_y = math.sin(predictor_line_angle)*50+predictor_add_y
-    dt = clock.tick(FRAMERATE/2)
     pg.display.update()
