@@ -9,6 +9,7 @@ class Entity:
         self.updated = {} # Updated for client. {Client: Updated}
         # If the entity is an actor then it should have x and y netvars and be displayed in the world
         # By convention call x netxpos and y netypos in your actor
+        self.owner = None
         self.actor = True
         pass
 
@@ -27,7 +28,10 @@ class Entity:
         datatable_to_send = {}
         for _id in self.data_table:
             netvar = self.data_table[_id]
-
+            # If the netvar is only for the owner
+            if netvar.only_send_to_owner:
+                if self.owner != client: # This client is not the owner so
+                    continue #skip sending
             # If the netvar is updated add it to the table to send
             if netvar.get_updated(client) or send_everything:
                 if netvar.quantise == 0:

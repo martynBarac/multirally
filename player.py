@@ -12,27 +12,42 @@ DOWNARROW = '4'
 
 
 class Player(entity.Entity):
-    def __init__(self, x, y, angle, name):
+    def __init__(self, x, y, angle, name, owner = None):
         entity.Entity.__init__(self)
         self.class_id = 1
-
+        self.owner = owner
         self.name = NetworkVar(self, name, 0)
         self.netxpos = NetworkVar(self, x, 1)
-        self.netxpos.quantise = 0
+        self.netxpos.quantise = 2
         self.netypos = NetworkVar(self, y, 2)
-        self.netypos.quantise = 0
+        self.netypos.quantise = 2
         self.netangle = NetworkVar(self, y, 3)
         self.netangle.quantise = 3
         self.netcolour = NetworkVar(self, (255, 255, 0), 4)
+
         self.xpos = x
         self.ypos = y
         self.w = CAR_SIZE
         self.h = CAR_SIZE
+
         self.xvel = 0
         self.yvel = 0
+        self.netxvel = NetworkVar(self, self.xvel, 5)
+        self.netxvel.quantise = 0
+        self.netxvel.only_send_to_owner = True
+        self.netyvel = NetworkVar(self, self.yvel, 6)
+        self.netyvel.quantise = 0
+        self.netyvel.only_send_to_owner = True
 
         self.xacc = 0
         self.yacc = 0
+        self.netxacc = NetworkVar(self, 0, 7)
+        self.netyacc = NetworkVar(self, 0, 8)
+        self.netxacc.quantise = 0
+        self.netxacc.only_send_to_owner = True
+
+        self.netyacc.quantise = 0
+        self.netyacc.only_send_to_owner = True
 
         self.angle = angle
 
@@ -56,9 +71,9 @@ class Player(entity.Entity):
         if actions[DOWNARROW]:
             throttle = -self.engine_power/2
         if actions[LEFTARROW]:
-            self.angle += 0.1*dt
+            self.angle += 0.2*dt
         if actions[RIGHTARROW]:
-            self.angle -= 0.1*dt
+            self.angle -= 0.2*dt
 
         maxfric = 0.5
 
@@ -87,14 +102,14 @@ class Player(entity.Entity):
         self.xvel += self.xacc*dt
         self.yvel += self.yacc*dt
 
-        self.xvel = round(self.xvel, 4)
-        self.yvel = round(self.yvel, 4)
+        #self.xvel = round(self.xvel, 4)
+        #self.yvel = round(self.yvel, 4)
 
         self.xpos += self.xvel*dt
         self.ypos += self.yvel*dt
 
-        self.xpos = round(self.xpos, 10)
-        self.ypos = round(self.ypos, 10)
+        #self.xpos = round(self.xpos, 10)
+        #self.ypos = round(self.ypos, 10)
 
         # self.xpos = self.xpos%150000
         # self.ypos = self.ypos%150000
@@ -138,6 +153,10 @@ class Player(entity.Entity):
 
         self.netxpos.set(self.xpos, True)
         self.netypos.set(self.ypos, True)
+        self.netxvel.set(self.xvel, True)
+        self.netyvel.set(self.yvel, True)
+        self.netxacc.set(self.xacc, True)
+        self.netyacc.set(self.yacc, True)
         self.netangle.set(self.angle, True)
         return None
 
@@ -186,6 +205,10 @@ class CPlayer(entity.CEntity):
         self.netypos = NetworkVar(self, 0, 2, True)
         self.netangle = NetworkVar(self, 0, 3)
         self.netcolour = NetworkVar(self, (0, 0, 0), 4)
+        self.netxvel = NetworkVar(self, 0, 5)
+        self.netyvel = NetworkVar(self, 0, 6)
+        self.netxacc = NetworkVar(self, 0, 7)
+        self.netyacc = NetworkVar(self, 0, 8)
         self.orgimage = pg.image.load("sprites/car.png").convert_alpha()
         self.colour = (128, 128, 128)
         self.rotimage = self.orgimage.copy()

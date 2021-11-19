@@ -48,6 +48,9 @@ dt2 = 0
 game_over = False
 
 old_client_actions = ACTIONS.copy()
+prediction_amplifier = 9
+old_xpos = 0
+old_ypos = 0
 sock.setblocking(0)
 start_time = time.perf_counter()
 st = time.perf_counter()
@@ -108,7 +111,7 @@ def do_thing_with_message(_world):
 
         server_action_numbers.append(last_action)
         snapshots.append(msg)
-        if len(snapshots) > 8: #Snapshot Buffer
+        if len(snapshots) > 2: #Snapshot Buffer
             snapshots.pop(0)
             server_action_numbers.pop(0)
 
@@ -158,7 +161,16 @@ while not game_over:
     client_actions["TIME"] = time.perf_counter()
     action_history = np.append(action_history, client_actions)
     if camfollowing:
+
+        old_xpos = client_prediction_car.xpos
+        old_ypos = client_prediction_car.ypos
         client_prediction_car.angle = camfollowing.netangle.var
+        client_prediction_car.xpos = camfollowing.netxpos.var
+        client_prediction_car.ypos = camfollowing.netypos.var
+        client_prediction_car.xvel = camfollowing.netxvel.var
+        client_prediction_car.yvel = camfollowing.netyvel.var
+        client_prediction_car.xacc = camfollowing.netxacc.var
+        client_prediction_car.yacc = camfollowing.netyacc.var
     # Client prediction
     if client_prediction_world is not None and server_last_action is not None:
         # Apply new thing and do last action
@@ -173,17 +185,15 @@ while not game_over:
                     done = True
                 # We want to predict how long the server thinks we have been pressing the button down
                 # And exclude calculating part the server already knows about
-                if action["TIME"]+ latency > time.perf_counter():
+                if action["TIME"]+ latency >= time.perf_counter():
                     delta_time_start = time.perf_counter()
                     # Calculate delta time
                     if oldaction is not None:
-                        client_prediction_world.dt = (action["TIME"] - oldaction["TIME"])*9
+                        client_prediction_world.dt = (action["TIME"] - oldaction["TIME"])*10
                     else:
-                        client_prediction_world.dt = dt2*13000
+                        client_prediction_world.dt = dt2*10
                     # Apply the prediction
                     client_prediction_car.update(client_prediction_world, action)
-                    client_prediction_car.xacc =0
-                    client_prediction_car.yacc =0
                     dt2 = (time.perf_counter() - delta_time_start)
                 else:
                     del action # Get rid of actions the server has already responded to
@@ -193,7 +203,7 @@ while not game_over:
                 oldaction = action
             except NameError:
                 oldaction = None
-                
+
     try:
         msg = my_client.receive_msg()
     except BlockingIOError:
@@ -220,6 +230,7 @@ while not game_over:
     for _id in entity_dict:
         entity_dict[_id].update()
         if camfollowing:
+
             cam = (camfollowing.netxpos.var-SCREEN_WIDTH//2, camfollowing.netypos.var-SCREEN_HEIGHT//2)
         entity_dict[_id].draw(pg, screen, cam)
 
@@ -228,9 +239,21 @@ while not game_over:
 
     for wall in Dat.lvl["wall"]:
         pg.draw.rect(screen, (255, 255, 255), [wall[0]-cam[0], wall[1]-cam[1], wall[2], wall[3]])
-    predictor_line_angle = -client_prediction_car.angle
-    predictor_end_x = SCREEN_WIDTH//2+math.cos(predictor_line_angle)*50
-    predictor_end_y = SCREEN_HEIGHT//2+math.sin(predictor_line_angle)*50
-    pg.draw.line(screen, (0,255,0), (SCREEN_WIDTH//2, SCREEN_HEIGHT//2), (predictor_end_x, predictor_end_y))
+    predictor_line_angle = client_prediction_car.angle
+    sides = [np.array([-8, -5]), np.array([-8, 5]), np.array([8, 5]), np.array([8, -5])]
+    rotation = np.array([[math.cos(predictor_line_angle),-math.sin(predictor_line_angle)],
+                          [math.sin(predictor_line_angle), math.cos(predictor_line_angle)]])
+    predictor_add_x = (client_prediction_car.xpos) - cam[0] + 6
+    predictor_add_y = (client_prediction_car.ypos) - cam[1] + 7
+    translation = np.array([predictor_add_x,predictor_add_y])
+    for i in range(len(sides)):
+        sides[i] = np.dot(sides[i], rotation)
+        sides[i] = sides[i] + translation
+
+    for i in range(len(sides)):
+        pg.draw.line(screen, (0, 255, 0), sides[i - 1], sides[i])
+
+    predictor_end_x = math.cos(predictor_line_angle)*50+predictor_add_x
+    predictor_end_y = math.sin(predictor_line_angle)*50+predictor_add_y
     dt = clock.tick(FRAMERATE/2)
     pg.display.update()

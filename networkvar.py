@@ -8,6 +8,7 @@ class NetworkVar:
         self.updated = {} #Updated for client. {Client: Updated}
         self.lerp = lerp
         self.quantise = -1
+        self.only_send_to_owner = 0
 
         ent.data_table[_id] = self
 

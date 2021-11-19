@@ -26,7 +26,7 @@ class World:
 
     def add_new_player(self, client, name):
         spawnx, spawny = self.level["spawn"][0] # Get first spawn point
-        new_player = Player(spawnx, spawny, 0, name)
+        new_player = Player(spawnx, spawny, 0, name, client)
         new_player.netcolour.var = (random.randrange(0, 255), random.randrange(0, 255), random.randrange(0, 255))
         self.add_new_entity(new_player)
         self.player_table[new_player] = client
