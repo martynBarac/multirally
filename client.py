@@ -15,7 +15,7 @@ import winsound
 SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 """
 if len(sys.argv) >= 2:
-    addr = "110.33.73.252:27014"
+    addr = "110.33.73.252:2302"
 else:
     addr = socket.gethostbyname(socket.gethostname())
 """
@@ -26,7 +26,7 @@ addr = addr.split(":")
 if len(addr) > 1:
     PORT = int(addr[1])
 else:
-    PORT = 27014
+    PORT = 2302
 
 IP = addr[0]
 
@@ -60,7 +60,7 @@ start_time2 = [st]
 snapshots = []
 action_number = 0
 server_reaction_time = 0
-action_history = np.array([])
+action_history = np.array([]) #TODO This list needs purge
 server_action_numbers = [0]
 camfollowing_oldnetangle = 0
 server_last_action = None
@@ -187,6 +187,7 @@ while not game_over:
         done = False
         latency = 0
         oldaction = None
+        nowtime = time.perf_counter()
         if time.perf_counter() - time_to_correct_position < 0.001:
             dt2 = (time.perf_counter() - delta_time_start)
             delta_time_start = time.perf_counter()
@@ -194,8 +195,8 @@ while not game_over:
             client_prediction_car.update(client_prediction_world, client_actions)
         else:
             time_to_correct_position = time.perf_counter()
-           # print(len(action_history))
             for action in action_history:
+                #print(len(action_history))
                 # Only predict actions that are after the last action recieved
                 if action['a'] >= server_last_action:
                     if not done:
@@ -215,12 +216,16 @@ while not game_over:
                             client_prediction_world.dt = dt2
                             delta_time_start = time.perf_counter()
                         # Apply the prediction
+                        if client_prediction_world.dt > 0.1:
+                            print("JESUS")
                         client_prediction_car.update(client_prediction_world, action)
 
-                    else:
-                        del action # Get rid of actions the server has already responded to
+                    elif action["TIME"]+ latency+10 < time.perf_counter():
+                        #action_history = np.delete(action_history,0) # Get rid of actions the server has already responded to
+                        pass
                 else:
-                    del action
+                    action_history = np.delete(action_history,0)
+                    pass
                 try:
                     oldaction = action
                 except NameError:
@@ -251,9 +256,9 @@ while not game_over:
     for _id in entity_dict:
         entity_dict[_id].update()
         if camfollowing:
-            cam = (0,0)
+            #cam = (0,0)
             #cam = (camfollowing.netxpos.var-SCREEN_WIDTH//2, camfollowing.netypos.var-SCREEN_HEIGHT//2)
-            #cam = (client_prediction_car.xpos - SCREEN_WIDTH // 2, client_prediction_car.ypos - SCREEN_HEIGHT // 2)
+            cam = (client_prediction_car.xpos - SCREEN_WIDTH // 2, client_prediction_car.ypos - SCREEN_HEIGHT // 2)
         entity_dict[_id].draw(pg, screen, cam)
 
     for prop in static_ents:

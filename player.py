@@ -54,7 +54,7 @@ class Player(entity.Entity):
         self.health = 100
         self.mass = 10
         self.topSpeed = 10
-        self.engine_power = 1.
+        self.engine_power = 3.
         self.colour = (255, 255, 255)
         self.image = "sprites/car.png"
 
@@ -66,20 +66,14 @@ class Player(entity.Entity):
 
         # Do actions
         throttle = 0
-        self.yvel = 0
-        self.xvel = 0
         if actions[UPARROW]:
             throttle = self.engine_power
-            self.yvel = -8
         if actions[DOWNARROW]:
             throttle = -self.engine_power/2
-            self.yvel = 8
         if actions[LEFTARROW]:
             self.angle += 0.2*dt
-            self.xvel = -8
         if actions[RIGHTARROW]:
             self.angle -= 0.2*dt
-            self.xvel = 8
 
         maxfric = 0.5
 
@@ -102,12 +96,12 @@ class Player(entity.Entity):
             fcx = centripForce * math.sin(self.angle)
             fcy = -centripForce * math.cos(self.angle)
 
-        #self.xacc = - fric*math.cos(self.angle) + throttle*math.cos(self.angle) + fcx
-        #self.yacc = fric*math.sin(self.angle) - throttle*math.sin(self.angle) - fcy
-        #self.xacc = throttle * math.cos(self.angle)
-        #self.yacc = -throttle * math.sin(self.angle)
-        #self.xvel += self.xacc*dt
-        #self.yvel += self.yacc*dt
+        self.xacc = - fric*math.cos(self.angle) + throttle*math.cos(self.angle) + fcx
+        self.yacc = fric*math.sin(self.angle) - throttle*math.sin(self.angle) - fcy
+        self.xacc = throttle * math.cos(self.angle)
+        self.yacc = -throttle * math.sin(self.angle)
+        self.xvel += self.xacc*dt
+        self.yvel += self.yacc*dt
 
         #self.xvel = round(self.xvel, 4)
         #self.yvel = round(self.yvel, 4)
