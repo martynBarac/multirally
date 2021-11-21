@@ -11,7 +11,7 @@ import numpy as np
 import world
 import winsound
 
-
+SNAPSHOT_BUFFER = 2
 SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 """
 if len(sys.argv) >= 2:
@@ -66,6 +66,7 @@ camfollowing_oldnetangle = 0
 server_last_action = None
 client_prediction_car = entity_table.entity_table[1][0](0,0,0,'player')
 client_prediction_world = None
+CLIENT_PREDICTION_PRESICION = 1
 msg = None
 static_ents = [] # Entities that are static in the level
 myfont = pg.font.SysFont('Comic Sans MS', 30)
@@ -114,7 +115,7 @@ def do_thing_with_message(_world):
 
         server_action_numbers.append(last_action)
         snapshots.append(msg)
-        if len(snapshots) > 5: #Snapshot Buffer
+        if len(snapshots) > SNAPSHOT_BUFFER: #Snapshot Buffer
             snapshots.pop(0)
             server_action_numbers.pop(0)
 
@@ -134,7 +135,9 @@ def do_thing_with_message(_world):
 
     return cf, server_action_numbers[0], _world
 
-
+debug_dots_enable = False
+debug_dots_server = []
+debug_dots_client = []
 _once = True
 delta_time_start = time.perf_counter()
 time_to_correct_position = time.perf_counter()
@@ -160,7 +163,6 @@ while not game_over:
         client_actions = stuff
     # delta compression
     if client_actions != old_client_actions and time.perf_counter() - start_time > 1/16:
-    #if start_time > 1/16:
         old_client_actions = client_actions.copy()
         action_number += 1
         print("SEND", action_number)
@@ -217,10 +219,8 @@ while not game_over:
                     dt2 = latency
                     if time_released:
                         dt2 = latency-(time.perf_counter()-time_released)
-
-
-                client_prediction_world.dt = dt2
-                for i in range(10):
+                client_prediction_world.dt = dt2*10/CLIENT_PREDICTION_PRESICION
+                for i in range(CLIENT_PREDICTION_PRESICION):
                     client_prediction_car.update(client_prediction_world, action)
     try:
         msg = my_client.receive_msg()
@@ -241,10 +241,10 @@ while not game_over:
     if server_last_action != old_server_last_action:
         server_reaction_time = time.perf_counter()
 
-
-
     # Draw everything
     screen.fill((0, 0, 0))
+
+    # Draw server ents
     for _id in entity_dict:
         entity_dict[_id].update()
         if camfollowing:
@@ -253,6 +253,7 @@ while not game_over:
             cam = (client_prediction_car.xpos - SCREEN_WIDTH // 2, client_prediction_car.ypos - SCREEN_HEIGHT // 2)
         entity_dict[_id].draw(pg, screen, cam)
 
+    # Draw client ents
     for prop in static_ents:
         prop.draw(pg, screen, cam)
 
@@ -268,11 +269,26 @@ while not game_over:
     for i in range(len(sides)):
         sides[i] = np.dot(sides[i], rotation)
         sides[i] = sides[i] + translation
-
     for i in range(len(sides)):
         pg.draw.line(screen, (0, 255, 0), sides[i - 1], sides[i])
     predictor_end_x = math.cos(predictor_line_angle)*50+predictor_add_x
     predictor_end_y = math.sin(predictor_line_angle)*50+predictor_add_y
+
+    # draw dots
+    if debug_dots_enable:
+        debug_dots_client.append((client_prediction_car.xpos, client_prediction_car.ypos))
+        debug_dots_server.append((camfollowing.netxpos.var, camfollowing.netypos.var))
+        if len(debug_dots_client) > 600:
+            debug_dots_client.pop(0)
+            debug_dots_server.pop(0)
+        for dot_pos in debug_dots_server:
+            dot_pos_rel = (dot_pos[0] - cam[0], dot_pos[1] - cam[1])
+            pg.draw.circle(screen, (255,0,0), dot_pos_rel, 8)
+        for dot_pos in debug_dots_client:
+            dot_pos_rel = (dot_pos[0]-cam[0], dot_pos[1]-cam[1])
+            pg.draw.circle(screen, (0,255,0), dot_pos_rel, 8, 1)
+
+    # Draw debug hud
     try:
         textsurface = myfont.render(str(round(latency*1000))+"   "+str(len(action_history)), False, (0, 200, 0))
         screen.blit(textsurface, (0, 0))
