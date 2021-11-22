@@ -3,14 +3,16 @@ import entity_table
 import random
 import game
 
+MAX_SNAPSHOT_HISTORY = 10
 class World:
 
     def __init__(self, level_name):
         self.player_table = {} # Holds all players {Class: client, ...}
         self.entdict = {} # Holds all entities {id: Class}
-        self.static_entities = [] #Entities that are static in the level
+        self.static_entities = [] # Entities that are static in the level
         self.level = game.load_level(level_name)
         self.level_name = level_name
+        self.client_world = False
 
         # Todo refactor static entities as their own thing
         if "LaserWall" in self.level:
@@ -18,11 +20,13 @@ class World:
                 self.add_new_static_entity(entity_table.entities.LaserWall(lw[0], lw[1], lw[2], lw[3]))
 
         self.dt = 1.5
-        self.snapshots = [] # Holds entdicts from last 10 frames [oldest frame, ..., newest frame]
+        self.snapshots = [] # Holds entdicts from last MAX_SNAPSHOT_HISTORY frames [oldest frame, ..., newest frame]
+        self.snapshot_number = 0 # Number tells what snapshot this is
         self.create_ents = [] # a list of any ents that were created
         self.delete_ents = [] # a list of ents that need to be deleted
         self.collision_sectors = [[]]
         self.collision_sector_size = 256
+        self.entites_to_spawn = [] #Q ueue up entities to spawn in the next frame
 
     def add_new_player(self, client, name):
         spawnx, spawny = self.level["spawn"][0] # Get first spawn point
@@ -39,12 +43,16 @@ class World:
                 del(self.player_table[player])
                 return None
 
+    def spawn_entity(self, entity):
+        self.entites_to_spawn.append(entity)
+
     def add_new_entity(self, entity):
         key = None
         # Find next untaken id
         for i in range(1000):
             if i not in self.entdict:
                 key = i
+                print(key)
                 break
 
         if key is None:
@@ -77,22 +85,39 @@ class World:
     def send_entire_gamestate(self, client):
         data_table = {}
         new_ents = []
-        print(self.entdict)
         for _id in self.entdict:
             ent = self.entdict[_id]
-            if ent != None:
+            if ent is not None:
                 ent_data_table = ent.prepare_data_table(client, True)
                 data_table[_id] = ent_data_table
                 new_ents.append((ent.class_id, _id))
         data_table["NEW"] = new_ents
         return data_table
 
+    def rewind_to_snapshot(self, game_state):
+        for _id in game_state:
+            if _id in self.entdict:
+                if self.entdict[_id] is not None:
+                    self.entdict[_id].apply_data_table(game_state[_id])
+
+    def rewind_to_snapshot_number(self, snapshot_number):
+        old_data = self.send_entire_gamestate(None)
+        game_state = None
+        for snapshot in range(len(self.snapshots)):
+            if self.snapshots[snapshot][0] == snapshot_number:
+                game_state = self.snapshots[snapshot][1]
+        if game_state is not None:
+            self.rewind_to_snapshot(game_state)
+        else:
+            print("State" + str(snapshot_number)+ "NOT FOUND")
+        return old_data
+
     def update(self, client_input_table):
         """This function should return any entities that are updated"""
-
-        self.snapshots.append(self.entdict.copy())
-        if len(self.snapshots) > 10:
-            self.snapshots.pop(0)
+        #Spawn queued up entities
+        for ent in self.entites_to_spawn:
+            self.add_new_entity(ent)
+        self.entites_to_spawn = []
 
         #Update all the entities
         for _id in self.entdict:
@@ -104,7 +129,7 @@ class World:
                     if client in client_input_table:
                         actions = client_input_table[client]
                     else:
-                        actions = {'1': False, '2': False, '3': False, '4': False}
+                        actions = {'1': False, '2': False, '3': False, '4': False, '5': False}
                     ent.update(self, actions)
                 else:
                     ent.update(self)
@@ -143,6 +168,14 @@ class World:
                         data_table["DEL"] = self.delete_ents
             client_data_table[client] = data_table
 
+        self.snapshots.append((self.snapshot_number, self.send_entire_gamestate(None)))
+        if len(self.snapshots) > MAX_SNAPSHOT_HISTORY:
+            self.snapshots.pop(0)
+        self.snapshot_number = (self.snapshot_number+1)%MAX_SNAPSHOT_HISTORY
+        # Clean entities from entdict
+        for _id in self.delete_ents:
+            if _id in self.entdict:
+                self.entdict.pop(_id)
         self.create_ents = []
         self.delete_ents = []
         return client_data_table

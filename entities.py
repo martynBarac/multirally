@@ -3,6 +3,31 @@ from networkvar import NetworkVar
 from constant import *
 
 
+class HitMarker(entity.Entity):
+    """Displays a hit circle for the client"""
+    def __init__(self, x, y):
+        entity.Entity.__init__(self)
+        self.class_id = 3
+        self.netxpos = NetworkVar(self, x, 1)
+        self.netypos = NetworkVar(self, y, 2)
+        self.frames = 0
+
+    def update(self, world):
+        self.frames += 1
+        if self.frames > 32:
+            self.destroy(world)
+
+
+class CHitMarker(entity.CEntity):
+    def __init__(self):
+        entity.CEntity.__init__(self)
+        self.netxpos = NetworkVar(self, 0, 1)
+        self.netypos = NetworkVar(self, 0, 2)
+
+    def draw(self, pg, screen, cam):
+        pg.draw.circle(screen, (200, 0, 0), (self.netxpos.var-cam[0], self.netypos.var-cam[1]), 8)
+
+
 class LaserWall(entity.Entity):
     """A laser wall the instantly kills your car!
     Static object needs level editor implementation along with powerup

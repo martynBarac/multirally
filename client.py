@@ -11,7 +11,7 @@ import numpy as np
 import world
 import winsound
 
-SNAPSHOT_BUFFER = 2
+SNAPSHOT_BUFFER = 3
 SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 """
 if len(sys.argv) >= 2:
@@ -66,7 +66,7 @@ camfollowing_oldnetangle = 0
 server_last_action = None
 client_prediction_car = entity_table.entity_table[1][0](0,0,0,'player')
 client_prediction_world = None
-CLIENT_PREDICTION_PRESICION = 1
+CLIENT_PREDICTION_PRESICION = 2
 msg = None
 static_ents = [] # Entities that are static in the level
 myfont = pg.font.SysFont('Comic Sans MS', 30)
@@ -79,7 +79,6 @@ def do_thing_with_message(_world):
     cf = None
     last_action = None
     if msg:
-        #print(msg)
         st = time.perf_counter()
         start_time2.append(st)
         start_time2.pop(0)
@@ -104,6 +103,7 @@ def do_thing_with_message(_world):
         if 'LEV' in msg:
             Dat.lvl = game.load_level(msg['LEV'])
             _world = world.World(msg['LEV'])
+            _world.client_world = True
             #TODO make this below more cool
             if "LaserWall" in Dat.lvl:
                 for lw in Dat.lvl["LaserWall"]:
@@ -158,6 +158,8 @@ while not game_over:
             client_actions[UPARROW] = True
         if keyboard_inputs[pg.K_DOWN]:
             client_actions[DOWNARROW] = True
+        if keyboard_inputs[pg.K_SPACE]:
+            client_actions[SHOOT_BUTTON] = True
     else:
         stuff = client_actions.copy()
         client_actions = stuff
@@ -251,7 +253,8 @@ while not game_over:
             #cam = (0,0)
             #cam = (camfollowing.netxpos.var-SCREEN_WIDTH//2, camfollowing.netypos.var-SCREEN_HEIGHT//2)
             cam = (client_prediction_car.xpos - SCREEN_WIDTH // 2, client_prediction_car.ypos - SCREEN_HEIGHT // 2)
-        entity_dict[_id].draw(pg, screen, cam)
+        if entity_dict[_id] != camfollowing:
+            entity_dict[_id].draw(pg, screen, cam)
 
     # Draw client ents
     for prop in static_ents:

@@ -1,5 +1,6 @@
-import entity
+import entities
 import math
+import entity
 from constant import *
 from networkvar import NetworkVar
 
@@ -16,6 +17,7 @@ class Player(entity.Entity):
         entity.Entity.__init__(self)
         self.class_id = 1
         self.owner = owner
+        self.shootable = True
         self.name = NetworkVar(self, name, 0)
         self.netxpos = NetworkVar(self, x, 1)
         self.netxpos.quantise = 2
@@ -24,6 +26,7 @@ class Player(entity.Entity):
         self.netangle = NetworkVar(self, y, 3)
         self.netangle.quantise = 6
         self.netcolour = NetworkVar(self, (255, 255, 0), 4)
+        self.gun_range = 500
 
         self.xpos = x
         self.ypos = y
@@ -74,6 +77,59 @@ class Player(entity.Entity):
             self.angle += 0.2*dt
         if actions[RIGHTARROW]:
             self.angle -= 0.2*dt
+        if actions[SHOOT_BUTTON]:
+            if not world.client_world:
+                #fastforward = world.rewind_to_snapshot_number(0)  # Rewind to the past
+                hitscan_endpoint = (self.xpos+math.cos(self.angle)*self.gun_range, self.ypos-math.sin(self.angle)*self.gun_range)
+                hitscan_startpoint = (self.xpos, self.ypos)
+                hit_point = None
+                for _id in world.entdict:
+                    _entity = world.entdict[_id]
+                    if _entity is None:
+                        continue
+                    if _entity.shootable and _entity != self:
+                        colpoints = _entity.get_collision_bounds()
+                        for i in range(len(colpoints)):
+                            colpoint1 = colpoints[i-1]
+                            colpoint2 = colpoints[i]
+                            intersect_point = self.line_intersection((colpoint1, colpoint2),
+                                                                     (hitscan_startpoint, hitscan_endpoint))
+                            if intersect_point is not None:
+                                hit_point = intersect_point
+                                if colpoint1[0] > colpoint2[0]:
+                                    rightpoint = colpoint1[0]
+                                    leftpoint = colpoint2[0]
+                                else:
+                                    rightpoint = colpoint2[0]
+                                    leftpoint = colpoint1[0]
+
+                                if hitscan_endpoint[1] > hitscan_startpoint[1]:
+                                    bottompoint = hitscan_startpoint[1]
+                                    toppoint = hitscan_endpoint[1]
+                                else:
+                                    bottompoint = hitscan_endpoint[1]
+                                    toppoint = hitscan_startpoint[1]
+                                print("INTERSECT")
+                                if leftpoint < intersect_point[0] < rightpoint:
+                                    if toppoint < intersect_point[1] < bottompoint:
+                                        # The segment hit!
+                                        print("HIT")
+                if hit_point is not None:
+                    hit = entities.HitMarker(hit_point[0], hit_point[1])
+                    print("Spawn me one!")
+                    world.spawn_entity(hit)
+
+                #world.rewind_to_snapshot(fastforward)  # Fast forward back to the real
+        # If we pressed the shoot button
+        # Can we actually shoot?
+            # Grab the correct state that we're on when we shoot
+            # Is this too far back for rewind?
+                # pass
+            # If not
+                # Rewind back to the state
+                # If we hit a shootable object then
+                # Call takedamage on object
+
 
         maxfric = 0.5
 
@@ -168,6 +224,30 @@ class Player(entity.Entity):
             if not rect1[1] >= rect2[1] + rect2[3] and not rect1[1] + rect1[3] <= rect2[1]:
                 return True
         return False
+
+    def get_collision_bounds(self):
+        return [(self.xpos-self.w, self.ypos-self.h),
+                (self.xpos+self.w, self.ypos-self.h),
+                (self.xpos-self.w, self.ypos+self.h),
+                (self.xpos+self.w, self.ypos+self.h)]
+
+    def line_intersection(self, line1, line2):
+        """Line intersect function from Paul Draper
+        https://stackoverflow.com/questions/20677795/how-do-i-compute-the-intersection-point-of-two-lines"""
+        xdiff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
+        ydiff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
+
+        def det(a, b):
+            return a[0] * b[1] - a[1] * b[0]
+
+        div = det(xdiff, ydiff)
+        if div == 0:
+            return None
+
+        d = (det(*line1), det(*line2))
+        x = det(d, xdiff) / div
+        y = det(d, ydiff) / div
+        return x, y
 
     def check_wall_col(self, lvl0, wall=False, x=False, y=False):
         # If wall is set it will only check collisions with that specific wall, otherwise it checks all walls

@@ -9,8 +9,10 @@ class Entity:
         self.updated = {} # Updated for client. {Client: Updated}
         # If the entity is an actor then it should have x and y netvars and be displayed in the world
         # By convention call x netxpos and y netypos in your actor
-        self.owner = None
         self.actor = True
+        # If the entity is shootable it needs collision bounds
+        self.shootable = False
+        self.owner = None
         pass
 
     def update(self, world):
@@ -18,6 +20,10 @@ class Entity:
 
     def destroy(self, world):
         self.ent_destroyed = True
+
+    def get_collision_bounds(self):
+        """Collision polygon for hit detection: [(x1, y1)... (xn, yn)]"""
+        return []
 
     def prepare_data_table(self, client, send_everything=False):
         """Client: Client we're sending the data to"""
@@ -137,8 +143,6 @@ class EntityLegacy:
             # print(self.data_table[__id].var)
 
     def apply_data_table_lerp(self, snapshots, starttime, curtime):
-
-
         for _id in snapshots[0]:
             __id = int(_id)
             if self.data_table[__id].lerp and _id in snapshots[1]:
