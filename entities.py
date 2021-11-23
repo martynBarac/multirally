@@ -7,7 +7,7 @@ class HitMarker(entity.Entity):
     """Displays a hit circle for the client"""
     def __init__(self, x, y):
         entity.Entity.__init__(self)
-        self.class_id = 3
+        self.class_id = 4
         self.netxpos = NetworkVar(self, x, 1)
         self.netypos = NetworkVar(self, y, 2)
         self.frames = 0
@@ -26,6 +26,41 @@ class CHitMarker(entity.CEntity):
 
     def draw(self, pg, screen, cam):
         pg.draw.circle(screen, (200, 0, 0), (self.netxpos.var-cam[0], self.netypos.var-cam[1]), 8)
+
+
+class DebugTarget(entity.Entity):
+    def __init__(self, x, y):
+        entity.Entity.__init__(self)
+        self.shootable = True
+        self.class_id = 4
+        self.w = 4
+        self.netxpos = NetworkVar(self, x, 1)
+        self.netypos = NetworkVar(self, y, 2)
+        self.count = 0
+        self.velocity = 12
+
+    def get_collision_bounds(self):
+        return [(self.netxpos.var-self.w, self.netypos.var-self.w),
+                (self.netxpos.var+self.w, self.netypos.var-self.w),
+                (self.netxpos.var-self.w, self.netypos.var+self.w),
+                (self.netxpos.var+self.w, self.netypos.var+self.w)]
+
+    def update(self, world):
+        self.count += world.dt
+        self.netxpos.set(self.netxpos.var + self.velocity*world.dt, True)
+        if self.count > 60:
+            self.velocity = -self.velocity
+            self.count = 0
+
+
+class CDebugTarget(entity.CEntity):
+    def __init__(self):
+        entity.CEntity.__init__(self)
+        self.netxpos = NetworkVar(self, 0, 1)
+        self.netypos = NetworkVar(self, 0, 2)
+
+    def draw(self, pg, screen, cam):
+        pg.draw.circle(screen, (0, 200, 0), (self.netxpos.var-cam[0], self.netypos.var-cam[1]), 8)
 
 
 class LaserWall(entity.Entity):

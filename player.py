@@ -78,11 +78,19 @@ class Player(entity.Entity):
         if actions[RIGHTARROW]:
             self.angle -= 0.2*dt
         if actions[SHOOT_BUTTON]:
+            latency = actions[SHOOT_BUTTON]
             if not world.client_world:
-                #fastforward = world.rewind_to_snapshot_number(0)  # Rewind to the past
+                # Get the hitscan stuff before rewind because client predicts itself in present
                 hitscan_endpoint = (self.xpos+math.cos(self.angle)*self.gun_range, self.ypos-math.sin(self.angle)*self.gun_range)
                 hitscan_startpoint = (self.xpos, self.ypos)
                 hit_point = None
+
+                # Rewind the game
+                snapshots_behind = int((latency * 10) // world.dt)
+                fastforward = None
+                if 0 < snapshots_behind < len(world.snapshots) - 1:
+                    fastforward = world.rewind_to_snapshot_index(-snapshots_behind)  # Rewind to the past
+
                 for _id in world.entdict:
                     _entity = world.entdict[_id]
                     if _entity is None:
@@ -95,7 +103,7 @@ class Player(entity.Entity):
                             intersect_point = self.line_intersection((colpoint1, colpoint2),
                                                                      (hitscan_startpoint, hitscan_endpoint))
                             if intersect_point is not None:
-                                hit_point = intersect_point
+
                                 if colpoint1[0] > colpoint2[0]:
                                     rightpoint = colpoint1[0]
                                     leftpoint = colpoint2[0]
@@ -109,17 +117,16 @@ class Player(entity.Entity):
                                 else:
                                     bottompoint = hitscan_endpoint[1]
                                     toppoint = hitscan_startpoint[1]
-                                print("INTERSECT")
                                 if leftpoint < intersect_point[0] < rightpoint:
+                                    hit_point = intersect_point
                                     if toppoint < intersect_point[1] < bottompoint:
+                                        pass
                                         # The segment hit!
-                                        print("HIT")
                 if hit_point is not None:
                     hit = entities.HitMarker(hit_point[0], hit_point[1])
-                    print("Spawn me one!")
                     world.spawn_entity(hit)
-
-                #world.rewind_to_snapshot(fastforward)  # Fast forward back to the real
+                if fastforward is not None:
+                    world.rewind_to_snapshot(fastforward)  # Fast forward back to the real
         # If we pressed the shoot button
         # Can we actually shoot?
             # Grab the correct state that we're on when we shoot
@@ -226,10 +233,10 @@ class Player(entity.Entity):
         return False
 
     def get_collision_bounds(self):
-        return [(self.xpos-self.w, self.ypos-self.h),
-                (self.xpos+self.w, self.ypos-self.h),
-                (self.xpos-self.w, self.ypos+self.h),
-                (self.xpos+self.w, self.ypos+self.h)]
+        return [(self.xpos-self.w/2, self.ypos-self.h/2),
+                (self.xpos+self.w/2, self.ypos-self.h/2),
+                (self.xpos-self.w/2, self.ypos+self.h/2),
+                (self.xpos+self.w/2, self.ypos+self.h/2)]
 
     def line_intersection(self, line1, line2):
         """Line intersect function from Paul Draper

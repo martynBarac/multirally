@@ -11,7 +11,7 @@ import numpy as np
 import world
 import winsound
 
-SNAPSHOT_BUFFER = 3
+SNAPSHOT_BUFFER = 30
 SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 """
 if len(sys.argv) >= 2:
@@ -47,6 +47,7 @@ cam = (0, 0)
 camfollowing = None
 dt = 0
 dt2 = 0
+latency = TICKRATE*SNAPSHOT_BUFFER
 game_over = False
 
 old_client_actions = ACTIONS.copy()
@@ -159,7 +160,7 @@ while not game_over:
         if keyboard_inputs[pg.K_DOWN]:
             client_actions[DOWNARROW] = True
         if keyboard_inputs[pg.K_SPACE]:
-            client_actions[SHOOT_BUTTON] = True
+            client_actions[SHOOT_BUTTON] = latency
     else:
         stuff = client_actions.copy()
         client_actions = stuff
@@ -297,4 +298,10 @@ while not game_over:
         screen.blit(textsurface, (0, 0))
     except NameError:
         pass
+
+    # Draw hitscan
+    hitscan_startpoint = (SCREEN_WIDTH//2+6, SCREEN_HEIGHT//2+6)
+    hitscan_endpoint = (hitscan_startpoint[0] + math.cos(predictor_line_angle) * 500,
+                        hitscan_startpoint[1] - math.sin(predictor_line_angle) * 500)
+    pg.draw.line(screen, (255,0,0), hitscan_startpoint, hitscan_endpoint, 1)
     pg.display.update()

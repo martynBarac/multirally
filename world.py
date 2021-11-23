@@ -3,7 +3,7 @@ import entity_table
 import random
 import game
 
-MAX_SNAPSHOT_HISTORY = 10
+MAX_SNAPSHOT_HISTORY = 100
 class World:
 
     def __init__(self, level_name):
@@ -27,6 +27,7 @@ class World:
         self.collision_sectors = [[]]
         self.collision_sector_size = 256
         self.entites_to_spawn = [] #Q ueue up entities to spawn in the next frame
+        self.add_new_entity(entity_table.entity_table[4][0](128, 128))
 
     def add_new_player(self, client, name):
         spawnx, spawny = self.level["spawn"][0] # Get first spawn point
@@ -109,7 +110,13 @@ class World:
         if game_state is not None:
             self.rewind_to_snapshot(game_state)
         else:
-            print("State" + str(snapshot_number)+ "NOT FOUND")
+            print("State " + str(snapshot_number)+ " NOT FOUND")
+        return old_data
+
+    def rewind_to_snapshot_index(self, snapshot_index):
+        old_data = self.send_entire_gamestate(None)
+        game_state = self.snapshots[snapshot_index][1]
+        self.rewind_to_snapshot(game_state)
         return old_data
 
     def update(self, client_input_table):
@@ -148,16 +155,16 @@ class World:
             for _id in self.entdict:
                 ent = self.entdict[_id]
                 if ent is not None:
-                    ent_data_table = ent.prepare_data_table(client)
-
                     if ent.get_updated(client):
                         if ent.actor and ent != player:
+                            # If we're on the screen then send info
                             if abs(ent.netxpos.var - player.netxpos.var) < 320 \
                                     or abs(ent.netypos.var - player.netypos.var) < 240:
-
+                                ent_data_table = ent.prepare_data_table(client)
                                 data_table[_id] = ent_data_table
                                 ent.updated[client] = False
                         else:
+                            ent_data_table = ent.prepare_data_table(client)
                             data_table[_id] = ent_data_table
                             ent.updated[client] = False
 
