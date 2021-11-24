@@ -11,7 +11,7 @@ import numpy as np
 import world
 import winsound
 
-SNAPSHOT_BUFFER = 30
+SNAPSHOT_BUFFER = 2
 SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 """
 if len(sys.argv) >= 2:
