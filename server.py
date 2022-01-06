@@ -4,6 +4,7 @@ from network import *
 import select
 import world
 
+
 class Server:
 
     def __init__(self, ip, port, lvl):
@@ -28,6 +29,7 @@ class Server:
 
         self.new_clients = []
         self.start_time = 0
+
     def update(self):
         readable, writeable, exception = select.select(self.maybe_readable, self.maybe_writeable, self.maybe_readable)
         for s in readable:
@@ -42,13 +44,15 @@ class Server:
                 print(addr, "Connected!")
             else:
                 try:
-                    msg = self.network_dict[s].receive_msg() # Get the client inputs
-                    self.client_input_table[s] = msg
-                    self.client_last_action_number[s] = msg['a']
-                    messages = self.network_dict[s].read_unread_messages() # Get more if the client sent lots at a time
-                    for message in messages:
-                        self.client_input_table[s] = message
-                        self.client_last_action_number[s] = message['a']
+                    self.network_dict[s].receive_msg() # Get the client inputs
+                    self.network_dict[s].load_unread_messages()
+                    while True:
+                        msg = self.network_dict[s].read_oldest_message()
+                        if msg is None:
+                            break
+                        self.client_input_table[s] = msg
+                        self.client_last_action_number[s] = msg['a']
+                    print(self.network_dict[s].messages_to_read)
                 except ConnectionResetError:
                     del(self.network_dict[s])
                     self.maybe_readable.remove(s)
@@ -71,7 +75,7 @@ class Server:
                         self.data_table[s]["ACT"] = self.client_last_action_number[s]
                     self.network_dict[s].send_msg(self.data_table[s])
 
-        time.sleep(1 / TICKRATE)
+        time.sleep(1 / 16)
         # Start updating world
         self.data_table = self.world.update(self.client_input_table)
         self.world.dt = (time.perf_counter()-self.start_time)*10

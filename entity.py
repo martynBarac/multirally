@@ -1,3 +1,4 @@
+import constant
 
 class Entity:
 
@@ -65,31 +66,36 @@ class Entity:
                 self.data_table[__id].var = datatable_to_receive[_id]
                 # print(self.data_table[__id].var)
 
-    def apply_data_table_lerp(self, snapshots, starttime, curtime):
-        if snapshots[0] is not None:
-            for _id in snapshots[0]:
-                __id = int(_id)
-                if self.data_table[__id].lerp and _id in snapshots[1]:
-                    # Lerp from https://en.wikipedia.org/wiki/Linear_interpolation
-                    interp_time = 1/15
-                    y0 = snapshots[0][_id]
-                    y1 = snapshots[1][_id]
-                    x0 = starttime
-                    x1 = starttime+interp_time # interp time
-                    x = curtime
+    def apply_data_table_lerp(self, snapshots, starttimes, curtime):
+        #TODO: LERPOLATE BETWEEN EACH SNAPSHOT NOT JUST 2
+        interp_time = 1 / constant.TICKRATE
+        for i in range(len(snapshots)-1):
+            if snapshots[i] is not None:
+                if starttimes[i] + interp_time > curtime:
+                    for _id in snapshots[i]:
+                        __id = int(_id)
+                        if self.data_table[__id].lerp and _id in snapshots[1]:
+                            # Lerp from https://en.wikipedia.org/wiki/Linear_interpolation
 
-                    numerator = y0*(x1-x)+y1*(x-x0)
-                    denominator = x1 - x0
-                    if curtime > x1:
-                        self.data_table[__id].var=y1
-                    else:
-                        self.data_table[__id].var = numerator/denominator
-                else:
-                    self.data_table[__id].var = snapshots[0][_id]
-        elif snapshots[1] is not None:
-            for _id in snapshots[1]:
-                __id = int(_id)
-                self.data_table[__id].var = snapshots[1][_id]
+                            y0 = snapshots[i][_id]
+                            y1 = snapshots[i+1][_id]
+                            x0 = starttimes[i]
+                            x1 = starttimes[i]+interp_time # interp time
+                            x = curtime
+
+                            numerator = y0*(x1-x)+y1*(x-x0)
+                            denominator = x1 - x0
+                            if curtime > x1:
+                                self.data_table[__id].var=y1
+                            else:
+                                self.data_table[__id].var = numerator/denominator
+                        else:
+                            self.data_table[__id].var = snapshots[0][_id]
+                elif snapshots[i+1] is not None:
+                    for _id in snapshots[i+1]:
+                        __id = int(_id)
+                        self.data_table[__id].var = snapshots[i+1][_id]
+                break
 
 
 

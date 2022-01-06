@@ -56,8 +56,8 @@ class DebugTarget(entity.Entity):
 class CDebugTarget(entity.CEntity):
     def __init__(self):
         entity.CEntity.__init__(self)
-        self.netxpos = NetworkVar(self, 0, 1)
-        self.netypos = NetworkVar(self, 0, 2)
+        self.netxpos = NetworkVar(self, 0, 1, True)
+        self.netypos = NetworkVar(self, 0, 2, True)
 
     def draw(self, pg, screen, cam):
         pg.draw.circle(screen, (0, 200, 0), (self.netxpos.var-cam[0], self.netypos.var-cam[1]), 8)

@@ -11,7 +11,7 @@ import numpy as np
 import world
 import winsound
 
-SNAPSHOT_BUFFER = 2
+SNAPSHOT_BUFFER = 3
 SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 """
 if len(sys.argv) >= 2:
@@ -57,7 +57,7 @@ old_ypos = 0
 sock.setblocking(0)
 start_time = time.perf_counter()
 st = time.perf_counter()
-start_time2 = [st]
+start_time2 = []
 snapshots = []
 action_number = 0
 server_reaction_time = 0
@@ -72,6 +72,7 @@ msg = None
 static_ents = [] # Entities that are static in the level
 myfont = pg.font.SysFont('Comic Sans MS', 30)
 
+
 class Dat:
     lvl = {"wall":[]}
 
@@ -81,8 +82,7 @@ def do_thing_with_message(_world):
     last_action = None
     if msg:
         st = time.perf_counter()
-        start_time2.append(st)
-        start_time2.pop(0)
+
         if 'NEW' in msg:  # Add new ents first to not cause confusion
             for new_ent in msg['NEW']:  # in new message: [[class_id, entity_id], [class_id, entity_id], ...]
                 entity_dict[str(new_ent[1])] = entity_table.entity_table[new_ent[0]][1]()
@@ -116,22 +116,27 @@ def do_thing_with_message(_world):
 
         server_action_numbers.append(last_action)
         snapshots.append(msg)
-        if len(snapshots) > SNAPSHOT_BUFFER: #Snapshot Buffer
-            snapshots.pop(0)
-            server_action_numbers.pop(0)
-
+        start_time2.append(st)
     if len(snapshots) >= 2:
         for _id in snapshots[0]:
             if _id in snapshots[1]:
-                entity_dict[_id].apply_data_table_lerp((snapshots[0][_id], snapshots[1][_id]), start_time2[0], time.perf_counter())  # Apply all the data we received to the ents
+                h = []
+                for i in snapshots:
+                    if _id in i: h.append(i[_id])
+                entity_dict[_id].apply_data_table_lerp(h, start_time2, time.perf_counter())  # Apply all the data we received to the ents
             else:
                 try:
                     entity_dict[_id].apply_data_table(snapshots[0][_id])
                 except KeyError:
                     pass
+        if len(snapshots) > SNAPSHOT_BUFFER: #Snapshot Buffer
+            start_time2.pop(0)
+            snapshots.pop(0)
+            server_action_numbers.pop(0)
     else:
         if msg:
             for _id in msg:
+                print("no snapshots!")
                 entity_dict[_id].apply_data_table(msg[_id])
 
     return cf, server_action_numbers[0], _world
@@ -171,11 +176,12 @@ while not game_over:
         print("SEND", action_number)
         client_actions[ACTION_NUMBER] = action_number
         my_client.send_msg(client_actions)
-        start_time = time.perf_counter()
         client_actions["TIME"] = time.perf_counter()
         if len(action_history) > 0:
             action_history[-1]["TIME2"] = time.perf_counter() # Save the moment we released the key
         action_history = np.append(action_history, client_actions)
+    if time.perf_counter() - start_time > 1/16:
+        start_time = time.perf_counter()
     #else:
     #    client_actions[ACTION_NUMBER] = action_number
     #    client_actions["TIME"] = time.perf_counter()
@@ -226,24 +232,18 @@ while not game_over:
                 for i in range(CLIENT_PREDICTION_PRESICION):
                     client_prediction_car.update(client_prediction_world, action)
     try:
-        msg = my_client.receive_msg()
+        my_client.receive_msg()
     except BlockingIOError:
-        msg = None
+        pass
+    my_client.load_unread_messages()
+    msg = my_client.read_oldest_message()
     old_server_last_action = server_last_action
     data, server_last_action, client_prediction_world = do_thing_with_message(client_prediction_world)
     if data is not None:
         camfollowing = data
-
-    msgs = my_client.read_unread_messages()
-    for msg in msgs:
-        data, server_last_action, client_prediction_world = do_thing_with_message(client_prediction_world)
-        if data is not None:
-            camfollowing = data
-        print("yea")
     # Get the time it takes for the server to respond to new input
     if server_last_action != old_server_last_action:
         server_reaction_time = time.perf_counter()
-
     # Draw everything
     screen.fill((0, 0, 0))
 
@@ -252,8 +252,8 @@ while not game_over:
         entity_dict[_id].update()
         if camfollowing:
             #cam = (0,0)
-            #cam = (camfollowing.netxpos.var-SCREEN_WIDTH//2, camfollowing.netypos.var-SCREEN_HEIGHT//2)
-            cam = (client_prediction_car.xpos - SCREEN_WIDTH // 2, client_prediction_car.ypos - SCREEN_HEIGHT // 2)
+            cam = (camfollowing.netxpos.var-SCREEN_WIDTH//2, camfollowing.netypos.var-SCREEN_HEIGHT//2)
+            #cam = (client_prediction_car.xpos - SCREEN_WIDTH // 2, client_prediction_car.ypos - SCREEN_HEIGHT // 2)
         if entity_dict[_id] != camfollowing:
             entity_dict[_id].draw(pg, screen, cam)
 

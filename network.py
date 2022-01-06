@@ -20,6 +20,7 @@ class Network:
         self.message_number = 0
         self.messages_to_send = []
         self.unread_messages = ""
+        self.messages_to_read = []
 
     def __del__(self):
         self.close()
@@ -41,51 +42,42 @@ class Network:
                 sent_bytes += sent
 
     def receive_msg(self):
+        # Simply recieve the message as a json string and return it
         msg_bytes = self.sock.recv(BUFFERSIZE)
         msg_json = msg_bytes.decode()
         self.unread_messages = self.unread_messages+msg_json
+        return msg_json
+
+    def load_unread_messages(self):
+        # load the unread messages from json into a list
         msg = self.unread_messages
         for i in range(len(msg)):
-            if i+1 < len(msg):
-                if msg[i]+msg[i+1] == "}{":
-                    msg = self.unread_messages[:i+1]
-                    self.unread_messages = self.unread_messages[i+1:]
+            msg2 = None
+            # the very end of the string detected
+            if i == len(msg)-1:
+                msg2 = self.unread_messages
+
+
+            elif i + 1 < len(msg):
+                # End of the message detected
+                if msg[i] + msg[i + 1] == "}{":
+                    msg2 = self.unread_messages[:i + 1]
+            if msg2:
+                try:
+                    self.messages_to_read.append(json.loads(msg2)) # Try to load it
+                    if i == len(msg): self.unread_messages = ""
+                    else: self.unread_messages = self.unread_messages[i + 1:] # We read the message so forget it
+                except json.decoder.JSONDecodeError:
+                    print("JsonerrorSUM", msg) # wtf
                     break
 
-        if msg == self.unread_messages:
-            self.unread_messages = ""
-        try:
-            msg2 = json.loads(msg)
-        except json.decoder.JSONDecodeError:
-            self.unread_messages=msg+self.unread_messages
-            msg2 = None
-            print("JSONERRORRV:", msg)
-            print(self.unread_messages)
-        return msg2
-
-    def read_unread_messages(self):
-        msg = self.unread_messages
-        msg_list= []
-        for i in range(len(msg)):
-            if i + 1 < len(msg):
-                if msg[i] + msg[i + 1] == "}{":
-                    msg = self.unread_messages[:i + 1]
-                    try:
-                        msg_list.append(json.loads(msg))
-                        self.unread_messages = self.unread_messages[i + 1:]
-                    except json.decoder.JSONDecodeError:
-                        print("JsonerrorSUM", msg)
-                        pass
-                    msg = self.unread_messages
-                    continue
-        if self.unread_messages:
-            try:
-                msg_list.append(json.loads(self.unread_messages))
-                self.unread_messages = ""
-            except json.decoder.JSONDecodeError:
-                print("JSONERRORUR:", self.unread_messages)
-
-        return msg_list
+    def read_oldest_message(self):
+        msg = None
+        if self.messages_to_read:
+            temp = self.messages_to_read.copy()
+            msg = temp[0]
+            self.messages_to_read.pop(0)
+        return msg
 
     def send_msg(self, message):
         msg_json = json.dumps(message)
