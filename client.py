@@ -18,9 +18,8 @@ SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 if len(sys.argv) >= 2:
     addr = "110.33.73.252:2302"
 else:
-    addr = socket.gethostbyname(socket.gethostname())
+    addr 
 """
-
 addr = socket.gethostbyname(socket.gethostname())
 
 addr = addr.split(":")
@@ -107,10 +106,13 @@ def do_thing_with_message(_world):
             _world = world.World(msg['LEV'])
             _world.client_world = True
             #TODO make this below more cool
-            if "LaserWall" in Dat.lvl:
-                for lw in Dat.lvl["LaserWall"]:
-                    static_ents.append(entity_table.entities.CLaserWall(lw[0], lw[1], lw[2], lw[3]))
+            for level_ent in Dat.lvl:
+                etable = entity_table.static_entity_table
+                if level_ent in etable:
+                    for params in Dat.lvl[level_ent]:
+                        static_ents.append(etable[level_ent][1](*params))  # The most sweaty python technique
             del msg['LEV']
+
         if 'ACT' in msg:
             last_action = int(msg['ACT'])
             del msg['ACT']
@@ -118,19 +120,23 @@ def do_thing_with_message(_world):
         server_action_numbers.append(last_action)
         snapshots.append(msg)
         start_time2.append(st)
+    st = time.perf_counter()
     if len(snapshots) >= SNAPSHOT_WAITTIME:
         for _id in snapshots[0]:
             if _id in snapshots[1]:
-                h = []
+                usable_snaps = []
                 for i in snapshots:
-                    if _id in i: h.append(i[_id])
-                    interp_time = (1 / TICKRATE)*len(snapshots)
-                entity_dict[_id].apply_data_table_lerp([snapshots[0][_id], snapshots[1][_id]], start_time2, time.perf_counter()-interp_time)  # Apply all the data we received to the ents
+                    if _id in i: usable_snaps.append(i[_id])
+                interp_time = (1 / TICKRATE)*len(snapshots)
+                #entity_dict[_id].apply_data_table_lerp([snapshots[0][_id], snapshots[1][_id]], start_time2, st-interp_time)
+                # Apply all the data we received to the ents
+                entity_dict[_id].apply_data_table_lerp(usable_snaps, start_time2, st - interp_time)
             else:
                 try:
                     entity_dict[_id].apply_data_table(snapshots[0][_id])
                 except KeyError:
                     pass
+
         if len(snapshots) > SNAPSHOT_BUFFER: #Snapshot Buffer
             start_time2.pop(0)
             snapshots.pop(0)

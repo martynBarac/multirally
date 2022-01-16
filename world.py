@@ -15,9 +15,11 @@ class World:
         self.client_world = False
 
         # Todo refactor static entities as their own thing
-        if "LaserWall" in self.level:
-            for lw in self.level["LaserWall"]:
-                self.add_new_static_entity(entity_table.entities.LaserWall(lw[0], lw[1], lw[2], lw[3]))
+        for level_ent in self.level:
+            etable = entity_table.static_entity_table
+            if level_ent in etable:
+                for params in self.level[level_ent]:
+                    self.add_new_static_entity(etable[level_ent][0](*params)) # The most sweaty python technique
 
         self.dt = 1.5
         self.snapshots = [] # Holds entdicts from last MAX_SNAPSHOT_HISTORY frames [oldest frame, ..., newest frame]
@@ -28,6 +30,7 @@ class World:
         self.collision_sector_size = 256
         self.entites_to_spawn = [] #Q ueue up entities to spawn in the next frame
         self.add_new_entity(entity_table.entity_table[4][0](128, 128))
+
 
     def add_new_player(self, client, name):
         spawnx, spawny = self.level["spawn"][0] # Get first spawn point

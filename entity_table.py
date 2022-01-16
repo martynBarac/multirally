@@ -9,3 +9,7 @@ entity_table = {
     3: (entities.HitMarker, entities.CHitMarker),
     4: (entities.DebugTarget, entities.CDebugTarget)
 }
+
+static_entity_table = {
+    "LaserWall": (entities.LaserWall, entities.CLaserWall)
+}

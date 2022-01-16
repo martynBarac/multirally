@@ -28,6 +28,7 @@ class Player(entity.Entity):
         self.netcolour = NetworkVar(self, (255, 255, 0), 4)
         self.gun_range = 500
 
+
         self.xpos = x
         self.ypos = y
         self.w = CAR_SIZE
@@ -41,7 +42,6 @@ class Player(entity.Entity):
         self.netyvel = NetworkVar(self, self.yvel, 6)
         self.netyvel.quantise = 2
         self.netyvel.only_send_to_owner = True
-
         self.xacc = 0
         self.yacc = 0
         self.netxacc = NetworkVar(self, 0, 7)
@@ -88,6 +88,7 @@ class Player(entity.Entity):
                 # Rewind the game
                 snapshots_behind = int((latency * 10) // world.dt)
                 fastforward = None
+
                 if 0 < snapshots_behind < len(world.snapshots) - 1:
                     fastforward = world.rewind_to_snapshot_index(-snapshots_behind)  # Rewind to the past
 
