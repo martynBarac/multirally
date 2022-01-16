@@ -68,29 +68,38 @@ class Entity:
 
     def apply_data_table_lerp(self, snapshots, starttimes, curtime):
         #TODO: LERPOLATE BETWEEN EACH SNAPSHOT NOT JUST 2
-        interp_time = 1 / constant.TICKRATE
+        #interp_time = 1 / constant.TICKRATE
+        now_time = curtime
+        #print(now_time, starttimes[1])
+        #7.4824052 7.3384268
         for i in range(len(snapshots)-1):
+            end_time = starttimes[i + 1]
+            start_time = starttimes[i]
             if snapshots[i] is not None:
-                if starttimes[i] + interp_time > curtime:
+                if end_time > now_time:
                     for _id in snapshots[i]:
                         __id = int(_id)
-                        if self.data_table[__id].lerp and _id in snapshots[1]:
+                        if self.data_table[__id].lerp and _id in snapshots[i+1]:
                             # Lerp from https://en.wikipedia.org/wiki/Linear_interpolation
 
                             y0 = snapshots[i][_id]
                             y1 = snapshots[i+1][_id]
-                            x0 = starttimes[i]
-                            x1 = starttimes[i]+interp_time # interp time
-                            x = curtime
-
+                            x0 = start_time
+                            x1 = end_time # interp time
+                            x = now_time
+                            #print(x0, x, x1)
+                            #6.8283112 7.2609975 7.0283112
+                            #3.848651 3.7388331 4.0484917
                             numerator = y0*(x1-x)+y1*(x-x0)
                             denominator = x1 - x0
-                            if curtime > x1:
-                                self.data_table[__id].var=y1
+                            if now_time > x1:
+                                self.data_table[__id].var = y1
+                                print("LOL1")
                             else:
                                 self.data_table[__id].var = numerator/denominator
                         else:
                             self.data_table[__id].var = snapshots[0][_id]
+
                 elif snapshots[i+1] is not None:
                     for _id in snapshots[i+1]:
                         __id = int(_id)

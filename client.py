@@ -11,7 +11,8 @@ import numpy as np
 import world
 import winsound
 
-SNAPSHOT_BUFFER = 3
+SNAPSHOT_BUFFER = 2
+SNAPSHOT_WAITTIME = 2
 SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 """
 if len(sys.argv) >= 2:
@@ -117,13 +118,14 @@ def do_thing_with_message(_world):
         server_action_numbers.append(last_action)
         snapshots.append(msg)
         start_time2.append(st)
-    if len(snapshots) >= 2:
+    if len(snapshots) >= SNAPSHOT_WAITTIME:
         for _id in snapshots[0]:
             if _id in snapshots[1]:
                 h = []
                 for i in snapshots:
                     if _id in i: h.append(i[_id])
-                entity_dict[_id].apply_data_table_lerp(h, start_time2, time.perf_counter())  # Apply all the data we received to the ents
+                    interp_time = (1 / TICKRATE)*len(snapshots)
+                entity_dict[_id].apply_data_table_lerp([snapshots[0][_id], snapshots[1][_id]], start_time2, time.perf_counter()-interp_time)  # Apply all the data we received to the ents
             else:
                 try:
                     entity_dict[_id].apply_data_table(snapshots[0][_id])
@@ -252,8 +254,8 @@ while not game_over:
         entity_dict[_id].update()
         if camfollowing:
             #cam = (0,0)
-            cam = (camfollowing.netxpos.var-SCREEN_WIDTH//2, camfollowing.netypos.var-SCREEN_HEIGHT//2)
-            #cam = (client_prediction_car.xpos - SCREEN_WIDTH // 2, client_prediction_car.ypos - SCREEN_HEIGHT // 2)
+            #cam = (camfollowing.netxpos.var-SCREEN_WIDTH//2, camfollowing.netypos.var-SCREEN_HEIGHT//2)
+            cam = (client_prediction_car.xpos - SCREEN_WIDTH // 2, client_prediction_car.ypos - SCREEN_HEIGHT // 2)
         if entity_dict[_id] != camfollowing:
             entity_dict[_id].draw(pg, screen, cam)
 
