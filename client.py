@@ -203,8 +203,7 @@ while not game_over:
         client_prediction_car.ypos = camfollowing.netypos.var
         client_prediction_car.xvel = camfollowing.netxvel.var
         client_prediction_car.yvel = camfollowing.netyvel.var
-        client_prediction_car.xacc = camfollowing.netxacc.var
-        client_prediction_car.yacc = camfollowing.netyacc.var
+        client_prediction_car.omega = camfollowing.netomega.var
 
     # Client prediction
     if client_prediction_world is not None and server_last_action is not None:
@@ -260,10 +259,10 @@ while not game_over:
         entity_dict[_id].update()
         if camfollowing:
             #cam = (0,0)
-            #cam = (camfollowing.netxpos.var-SCREEN_WIDTH//2, camfollowing.netypos.var-SCREEN_HEIGHT//2)
-            cam = (client_prediction_car.xpos - SCREEN_WIDTH // 2, client_prediction_car.ypos - SCREEN_HEIGHT // 2)
-        if entity_dict[_id] != camfollowing:
-            entity_dict[_id].draw(pg, screen, cam)
+            cam = (camfollowing.netxpos.var-SCREEN_WIDTH//2, camfollowing.netypos.var-SCREEN_HEIGHT//2)
+            #cam = (client_prediction_car.xpos - SCREEN_WIDTH // 2, client_prediction_car.ypos - SCREEN_HEIGHT // 2)
+        #if entity_dict[_id] != camfollowing:
+        entity_dict[_id].draw(pg, screen, cam)
 
     # Draw client ents
     for prop in static_ents:
@@ -312,4 +311,6 @@ while not game_over:
     hitscan_endpoint = (hitscan_startpoint[0] + math.cos(predictor_line_angle) * 500,
                         hitscan_startpoint[1] - math.sin(predictor_line_angle) * 500)
     pg.draw.line(screen, (255,0,0), hitscan_startpoint, hitscan_endpoint, 1)
+
+
     pg.display.update()

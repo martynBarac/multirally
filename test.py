@@ -6,7 +6,7 @@ import select
 import server
 import time
 import socket
-
+import threading
 
 def world_test():
 
@@ -42,7 +42,6 @@ def server_test():
         my_server.update()
 
 
-
 def client_test():
 
     port = 27014
@@ -56,6 +55,7 @@ def client_test():
         msg = my_client.receive_msg()
         print(msg)
 
-
-server_test()
-
+#server_test()
+x = threading.Thread(target = server_test)
+x.start()
+exec(open("client.py").read(), globals())

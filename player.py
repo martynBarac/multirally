@@ -4,7 +4,7 @@ import entity
 import numpy as np
 from constant import *
 from networkvar import NetworkVar
-
+from matplotlib import pyplot as plt
 import pygame as pg # Needs to be imported for image loading
 
 UPARROW = '1'
@@ -24,7 +24,8 @@ class Player(entity.Entity):
         self.netxpos.quantise = 2
         self.netypos = NetworkVar(self, y, 2)
         self.netypos.quantise = 2
-        self.netangle = NetworkVar(self, y, 3)
+        self.angle = angle
+        self.netangle = NetworkVar(self, angle, 3)
         self.netangle.quantise = 6
         self.netcolour = NetworkVar(self, (255, 255, 0), 4)
         self.gun_range = 500
@@ -47,110 +48,97 @@ class Player(entity.Entity):
         self.netyvel.only_send_to_owner = True
         self.xacc = 0
         self.yacc = 0
-        self.netxacc = NetworkVar(self, 0, 7)
-        self.netyacc = NetworkVar(self, 0, 8)
-        self.netxacc.quantise = 3
-        self.netxacc.only_send_to_owner = True
-
-        self.netyacc.quantise = 3
-        self.netyacc.only_send_to_owner = True
-
-        self.angle = angle
         self.omega = 0 # Anglular velocity
+        self.netomega = NetworkVar(self, self.omega, 7)
+        self.netomega.quantise = 10
+        self.netomega.only_send_to_owner = True
         self.alpha = 0 # Angluar acceleration
 
         self.health = 100
         self.mass = 10
         self.topSpeed = 10
-        self.engine_power = 3.
+        self.engine_power = 20
+        self.tyre_power = 70
         self.colour = (255, 255, 255)
         self.image = "sprites/car.png"
 
     def update(self, world, actions):
         # world variables
         dt = world.dt
+
         lvl0 = world.level["wall"]
 
         # Do actions
         throttle = 0
+        self.wheeldirection = 0
+        self.xacc = 0
+        self.yacc = 0
+        self.alpha = 0
+        wheel_pos_rear = -8
+        wheel_pos_front = 8
         if actions[UPARROW]:
             throttle = self.engine_power
         if actions[DOWNARROW]:
             throttle = -self.engine_power/2
         if actions[LEFTARROW]:
-            self.wheeldirection = math.pi/4
+            self.wheeldirection = math.pi/8
         if actions[RIGHTARROW]:
-            self.wheeldirection = -math.pi/4
+            self.wheeldirection = -math.pi/8
         if actions[SHOOT_BUTTON]:
             latency = actions[SHOOT_BUTTON]
             if not world.client_world:
                 self.shoot(world, latency)
-
-        maxfric = 0.5
-
         self.angle = self.angle % (2 * math.pi)
         self.angle = round(self.angle, 10)
-
-        speed = math.sqrt(self.xvel**2 + self.yvel**2)
-        direction = math.atan2(self.yvel, self.xvel)
-
-
-        self.xacc = - fric*math.cos(self.angle) + throttle*math.cos(self.angle) + fcx
-        self.yacc = fric*math.sin(self.angle) - throttle*math.sin(self.angle) - fcy
-        self.xacc = throttle * math.cos(self.angle)
-        self.yacc = -throttle * math.sin(self.angle)
-
+        speed = np.hypot(self.xvel, self.yvel)
+        vlong = self.xvel*math.cos(self.angle) - self.yvel*math.sin(self.angle)
+        vlat = self.xvel*math.sin(self.angle) + self.yvel*math.cos(self.angle)
+        force_centripital = 0
+        force_drag = 0.001*np.sign(vlong)*vlong**2
+        force_drag_lat = 1*np.sign(vlat)*vlat**2
+        force_drag_lat = np.clip(force_drag_lat, -self.tyre_power, self.tyre_power)
+        self.omega = 0
+        if self.wheeldirection:
+            force_drag = force_drag*1
+            force_drag_lat = force_drag_lat*1
+            radius = 32/math.sin(self.wheeldirection)
+            #force_centripital = self.mass*(vlong**2)/radius
+            #force_centripital = np.clip(force_centripital, -self.tyre_power, self.tyre_power)
+            self.omega = vlong/radius
+        #self.apply_force(math.pi/2, force_centripital)
+        self.apply_force(0, throttle)
+        self.apply_force(0, -force_drag)
+        self.apply_force(math.pi/2, force_drag_lat)
         # Apply the goods
+        self.omega += self.alpha * dt
         self.xvel += self.xacc*dt
         self.yvel += self.yacc*dt
+        self.angle += self.omega * dt
         self.xpos += self.xvel*dt
         self.ypos += self.yvel*dt
 
+
         # COLLISION
-        players_colliding = self.check_player_col(world)
-        if players_colliding:
-            # Find what my velocity is with momentum transfer
-            for player in players_colliding:
-                xv = self.xvel
-                yv = self.yvel
-                self.xvel = player.xvel
-                self.yvel = player.yvel
-                player.xvel = xv
-                player.yvel = yv
-
-        walls = self.check_wall_col(lvl0, False, self.xpos, self.ypos)
-
-        if walls: # Check if it hit anything
-            for col in walls: # Loop through every wall it hit
-                # Right side of block
-                if self.xvel < 0:
-                    if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos - self.xvel*dt, self.ypos):
-                        self.xpos = col[0] + col[2]
-                        self.xvel = 0
-                # Left side of block
-                elif self.xvel > 0:
-                    if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos - self.xvel*dt, self.ypos):
-                        self.xpos = col[0] - self.w
-                        self.xvel = 0
-                # Bottom side of block
-                if self.yvel < 0:
-                    if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos, self.ypos - self.yvel*dt):
-                        self.ypos = col[1] + col[3]
-                        self.yvel = 0
-                # Top side of block
-                elif self.yvel > 0:
-                    if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos, self.ypos - self.yvel*dt):
-                        self.ypos = col[1] - self.h
-                        self.yvel = 0
-
+        self.do_collision(world, lvl0)
         self.netxpos.set(self.xpos, True)
         self.netypos.set(self.ypos, True)
         self.netxvel.set(self.xvel, True)
         self.netyvel.set(self.yvel, True)
-        self.netxacc.set(self.xacc, True)
-        self.netyacc.set(self.yacc, True)
         self.netangle.set(self.angle, True)
+        self.netomega.set(self.omega, True)
         return None
+
+    def apply_force(self, theta, mag):
+        """Apply a force to the car that pushes and gives angular velocity
+        theta: Direction of the force relative to the direction of the car
+        mag: Magnitude of the force
+        """
+        # The easy newton
+        accel = mag/self.mass
+        xcomp = math.cos(self.angle+theta)
+        ycomp = -math.sin(self.angle+theta)
+        self.xacc += accel*xcomp
+        self.yacc += accel*ycomp
 
     def shoot(self, world, latency):
         """
@@ -207,24 +195,47 @@ class Player(entity.Entity):
         if fastforward is not None:
             world.rewind_to_snapshot(fastforward)  # Fast forward back to the real
 
-    def apply_force(self, x, y, theta, mag):
-        """Apply a force to the car that pushes and gives angular velocity
-        x: Relative x position from the center of the car
-        y: Relative y position
-        theta: Direction of the force relative to the direction of the car
-        mag: Magnitude of the force
-        """
+    def do_collision(self, world, lvl0):
+        dt = world.dt
+        players_colliding = self.check_player_col(world)
+        if players_colliding:
+            # Find what my velocity is with momentum transfer
+            for player in players_colliding:
+                xv = self.xvel
+                yv = self.yvel
+                self.xvel = player.xvel
+                self.yvel = player.yvel
+                player.xvel = xv
+                player.yvel = yv
 
-        # The easy newton
-        accel = mag/self.mass
-        xcomp = math.cos(self.angle+theta)
-        ycomp = -math.sin(self.angle+theta)
-        self.xacc += accel*xcomp
-        self.yacc += accel*ycomp
+        walls = self.check_wall_col(lvl0, False, self.xpos, self.ypos)
 
-        # Annoyance (angular acceleration)
-        moment = x*mag*xcomp + y*mag*ycomp
-        self.alpha += moment/self.moment_of_inertia
+        if walls:  # Check if it hit anything
+            for col in walls:  # Loop through every wall it hit
+                # Right side of block
+                if self.xvel < 0:
+                    if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos - self.xvel * dt,
+                                                                                  self.ypos):
+                        self.xpos = col[0] + col[2]
+                        self.xvel = 0
+                # Left side of block
+                elif self.xvel > 0:
+                    if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos - self.xvel * dt,
+                                                                                  self.ypos):
+                        self.xpos = col[0] - self.w
+                        self.xvel = 0
+                # Bottom side of block
+                if self.yvel < 0:
+                    if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos,
+                                                                                  self.ypos - self.yvel * dt):
+                        self.ypos = col[1] + col[3]
+                        self.yvel = 0
+                # Top side of block
+                elif self.yvel > 0:
+                    if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos,
+                                                                                  self.ypos - self.yvel * dt):
+                        self.ypos = col[1] - self.h
+                        self.yvel = 0
 
     def rect_col(self, rect1, rect2):
         # not to the right and not to the left
@@ -297,8 +308,7 @@ class CPlayer(entity.CEntity):
         self.netcolour = NetworkVar(self, (0, 0, 0), 4)
         self.netxvel = NetworkVar(self, 0, 5)
         self.netyvel = NetworkVar(self, 0, 6)
-        self.netxacc = NetworkVar(self, 0, 7)
-        self.netyacc = NetworkVar(self, 0, 8)
+        self.netomega = NetworkVar(self, 0, 7)
         self.orgimage = pg.image.load("sprites/car.png").convert_alpha()
         self.colour = (128, 128, 128)
         self.rotimage = self.orgimage.copy()
