@@ -1,6 +1,7 @@
 import entities
 import math
 import entity
+import numpy as np
 from constant import *
 from networkvar import NetworkVar
 
@@ -28,11 +29,13 @@ class Player(entity.Entity):
         self.netcolour = NetworkVar(self, (255, 255, 0), 4)
         self.gun_range = 500
 
+        self.wheeldirection = 0
 
         self.xpos = x
         self.ypos = y
         self.w = CAR_SIZE
         self.h = CAR_SIZE
+        self.moment_of_inertia = self.w*math.pow(self.h, 3)/12
 
         self.xvel = 0
         self.yvel = 0
@@ -53,6 +56,8 @@ class Player(entity.Entity):
         self.netyacc.only_send_to_owner = True
 
         self.angle = angle
+        self.omega = 0 # Anglular velocity
+        self.alpha = 0 # Angluar acceleration
 
         self.health = 100
         self.mass = 10
@@ -66,7 +71,6 @@ class Player(entity.Entity):
         dt = world.dt
         lvl0 = world.level["wall"]
 
-
         # Do actions
         throttle = 0
         if actions[UPARROW]:
@@ -74,70 +78,13 @@ class Player(entity.Entity):
         if actions[DOWNARROW]:
             throttle = -self.engine_power/2
         if actions[LEFTARROW]:
-            self.angle += 0.2*dt
+            self.wheeldirection = math.pi/4
         if actions[RIGHTARROW]:
-            self.angle -= 0.2*dt
+            self.wheeldirection = -math.pi/4
         if actions[SHOOT_BUTTON]:
             latency = actions[SHOOT_BUTTON]
             if not world.client_world:
-                # Get the hitscan stuff before rewind because client predicts itself in present
-                hitscan_endpoint = (self.xpos+math.cos(self.angle)*self.gun_range, self.ypos-math.sin(self.angle)*self.gun_range)
-                hitscan_startpoint = (self.xpos, self.ypos)
-                hit_point = None
-
-                # Rewind the game
-                snapshots_behind = int((latency * 10) // world.dt)
-                fastforward = None
-
-                if 0 < snapshots_behind < len(world.snapshots) - 1:
-                    fastforward = world.rewind_to_snapshot_index(-snapshots_behind)  # Rewind to the past
-
-                for _id in world.entdict:
-                    _entity = world.entdict[_id]
-                    if _entity is None:
-                        continue
-                    if _entity.shootable and _entity != self:
-                        colpoints = _entity.get_collision_bounds()
-                        for i in range(len(colpoints)):
-                            colpoint1 = colpoints[i-1]
-                            colpoint2 = colpoints[i]
-                            intersect_point = self.line_intersection((colpoint1, colpoint2),
-                                                                     (hitscan_startpoint, hitscan_endpoint))
-                            if intersect_point is not None:
-
-                                if colpoint1[0] > colpoint2[0]:
-                                    rightpoint = colpoint1[0]
-                                    leftpoint = colpoint2[0]
-                                else:
-                                    rightpoint = colpoint2[0]
-                                    leftpoint = colpoint1[0]
-
-                                if hitscan_endpoint[1] > hitscan_startpoint[1]:
-                                    bottompoint = hitscan_startpoint[1]
-                                    toppoint = hitscan_endpoint[1]
-                                else:
-                                    bottompoint = hitscan_endpoint[1]
-                                    toppoint = hitscan_startpoint[1]
-                                if leftpoint < intersect_point[0] < rightpoint:
-                                    hit_point = intersect_point
-                                    if toppoint < intersect_point[1] < bottompoint:
-                                        pass
-                                        # The segment hit!
-                if hit_point is not None:
-                    hit = entities.HitMarker(hit_point[0], hit_point[1])
-                    world.spawn_entity(hit)
-                if fastforward is not None:
-                    world.rewind_to_snapshot(fastforward)  # Fast forward back to the real
-        # If we pressed the shoot button
-        # Can we actually shoot?
-            # Grab the correct state that we're on when we shoot
-            # Is this too far back for rewind?
-                # pass
-            # If not
-                # Rewind back to the state
-                # If we hit a shootable object then
-                # Call takedamage on object
-
+                self.shoot(world, latency)
 
         maxfric = 0.5
 
@@ -147,37 +94,17 @@ class Player(entity.Entity):
         speed = math.sqrt(self.xvel**2 + self.yvel**2)
         direction = math.atan2(self.yvel, self.xvel)
 
-        fric = speed*0.0015
-        centripmax = 2
-        centripForce = -math.sin(self.angle+direction) * centripmax
-        # print("dir:", math.degrees(direction))
-        # print("ang:", math.degrees(self.angle))
-
-        if self.yvel < 0:
-            fcx = centripForce * math.sin(self.angle)
-            fcy = -centripForce * math.cos(self.angle)
-        else:
-            fcx = centripForce * math.sin(self.angle)
-            fcy = -centripForce * math.cos(self.angle)
 
         self.xacc = - fric*math.cos(self.angle) + throttle*math.cos(self.angle) + fcx
         self.yacc = fric*math.sin(self.angle) - throttle*math.sin(self.angle) - fcy
         self.xacc = throttle * math.cos(self.angle)
         self.yacc = -throttle * math.sin(self.angle)
+
+        # Apply the goods
         self.xvel += self.xacc*dt
         self.yvel += self.yacc*dt
-
-        #self.xvel = round(self.xvel, 4)
-        #self.yvel = round(self.yvel, 4)
-
         self.xpos += self.xvel*dt
         self.ypos += self.yvel*dt
-
-        #self.xpos = round(self.xpos, 0)
-        #self.ypos = round(self.ypos, 0)
-
-        # self.xpos = self.xpos%150000
-        # self.ypos = self.ypos%150000
 
         # COLLISION
         players_colliding = self.check_player_col(world)
@@ -224,6 +151,80 @@ class Player(entity.Entity):
         self.netyacc.set(self.yacc, True)
         self.netangle.set(self.angle, True)
         return None
+
+    def shoot(self, world, latency):
+        """
+        We shoot and do lag compensation
+        """
+
+        # Get the hitscan stuff before rewind because client predicts itself in present
+        hitscan_endpoint = (
+            self.xpos + math.cos(self.angle) * self.gun_range, self.ypos - math.sin(self.angle) * self.gun_range)
+        hitscan_startpoint = (self.xpos, self.ypos)
+        hit_point = None
+
+        # Rewind the game
+        snapshots_behind = int((latency * 10) // world.dt)
+        fastforward = None
+
+        if 0 < snapshots_behind < len(world.snapshots) - 1:
+            fastforward = world.rewind_to_snapshot_index(-snapshots_behind)  # Rewind to the past
+
+        for _id in world.entdict:
+            _entity = world.entdict[_id]
+            if _entity is None:
+                continue
+            if _entity.shootable and _entity != self:
+                colpoints = _entity.get_collision_bounds()
+                for i in range(len(colpoints)):
+                    colpoint1 = colpoints[i - 1]
+                    colpoint2 = colpoints[i]
+                    intersect_point = self.line_intersection((colpoint1, colpoint2),
+                                                             (hitscan_startpoint, hitscan_endpoint))
+                    if intersect_point is not None:
+
+                        if colpoint1[0] > colpoint2[0]:
+                            rightpoint = colpoint1[0]
+                            leftpoint = colpoint2[0]
+                        else:
+                            rightpoint = colpoint2[0]
+                            leftpoint = colpoint1[0]
+
+                        if hitscan_endpoint[1] > hitscan_startpoint[1]:
+                            bottompoint = hitscan_startpoint[1]
+                            toppoint = hitscan_endpoint[1]
+                        else:
+                            bottompoint = hitscan_endpoint[1]
+                            toppoint = hitscan_startpoint[1]
+                        if leftpoint < intersect_point[0] < rightpoint:
+                            hit_point = intersect_point
+                            if toppoint < intersect_point[1] < bottompoint:
+                                pass
+                                # The segment hit!
+        if hit_point is not None:
+            hit = entities.HitMarker(hit_point[0], hit_point[1])
+            world.spawn_entity(hit)
+        if fastforward is not None:
+            world.rewind_to_snapshot(fastforward)  # Fast forward back to the real
+
+    def apply_force(self, x, y, theta, mag):
+        """Apply a force to the car that pushes and gives angular velocity
+        x: Relative x position from the center of the car
+        y: Relative y position
+        theta: Direction of the force relative to the direction of the car
+        mag: Magnitude of the force
+        """
+
+        # The easy newton
+        accel = mag/self.mass
+        xcomp = math.cos(self.angle+theta)
+        ycomp = -math.sin(self.angle+theta)
+        self.xacc += accel*xcomp
+        self.yacc += accel*ycomp
+
+        # Annoyance (angular acceleration)
+        moment = x*mag*xcomp + y*mag*ycomp
+        self.alpha += moment/self.moment_of_inertia
 
     def rect_col(self, rect1, rect2):
         # not to the right and not to the left
