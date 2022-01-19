@@ -14,13 +14,11 @@ import winsound
 SNAPSHOT_BUFFER = 3
 SNAPSHOT_WAITTIME = 2
 SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
-"""
+print("AG", sys.argv)
 if len(sys.argv) >= 2:
-    addr = "110.33.73.252:2302"
+    addr = str(sys.argv[1])
 else:
-    addr 
-"""
-addr = socket.gethostbyname(socket.gethostname())
+    addr = socket.gethostbyname(socket.gethostname())
 
 addr = addr.split(":")
 if len(addr) > 1:
@@ -129,7 +127,8 @@ def do_thing_with_message(_world):
                 interp_time = (1 / TICKRATE)*len(snapshots)
                 #entity_dict[_id].apply_data_table_lerp([snapshots[0][_id], snapshots[1][_id]], start_time2, st-interp_time)
                 # Apply all the data we received to the ents
-                entity_dict[_id].apply_data_table_lerp(usable_snaps, start_time2, st - interp_time)
+                if _id in entity_dict:
+                    entity_dict[_id].apply_data_table_lerp(usable_snaps, start_time2, st - interp_time)
             else:
                 try:
                     entity_dict[_id].apply_data_table(snapshots[0][_id])
