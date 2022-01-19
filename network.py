@@ -200,6 +200,7 @@ def encode_player_data(pl, send_colour = False):
     _bytes = attributes
     return _bytes
 
+
 def encode_powerup_data(powerups):
     powmsg = [HEAD_POWERINFO]
     for i in range(len(powerups)):
@@ -211,6 +212,7 @@ def encode_powerup_data(powerups):
         powmsg.append(typ)
 
     return list_to_bytes(powmsg)
+
 
 def decode_powerup_data(msg):
     decoded = []

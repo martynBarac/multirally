@@ -11,7 +11,7 @@ import numpy as np
 import world
 import winsound
 
-SNAPSHOT_BUFFER = 2
+SNAPSHOT_BUFFER = 3
 SNAPSHOT_WAITTIME = 2
 SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 """
@@ -82,7 +82,6 @@ def do_thing_with_message(_world):
     last_action = None
     if msg:
         st = time.perf_counter()
-
         if 'NEW' in msg:  # Add new ents first to not cause confusion
             for new_ent in msg['NEW']:  # in new message: [[class_id, entity_id], [class_id, entity_id], ...]
                 entity_dict[str(new_ent[1])] = entity_table.entity_table[new_ent[0]][1]()
@@ -164,15 +163,17 @@ while not game_over:
     if time.perf_counter() - start_time > 1/16:
         client_actions = ACTIONS.copy()
         keyboard_inputs = pg.key.get_pressed()
+        print("LOL")
         if keyboard_inputs[pg.K_LEFT]:
             client_actions[LEFTARROW] = True
+            print("TURN")
         if keyboard_inputs[pg.K_RIGHT]:
             client_actions[RIGHTARROW] = True
         if keyboard_inputs[pg.K_UP]:
             client_actions[UPARROW] = True
         if keyboard_inputs[pg.K_DOWN]:
             client_actions[DOWNARROW] = True
-        if keyboard_inputs[pg.K_SPACE]:
+        if keyboard_inputs[pg.K_c]:
             client_actions[SHOOT_BUTTON] = latency
     else:
         stuff = client_actions.copy()
@@ -259,8 +260,8 @@ while not game_over:
         entity_dict[_id].update()
         if camfollowing:
             #cam = (0,0)
-            cam = (camfollowing.netxpos.var-SCREEN_WIDTH//2, camfollowing.netypos.var-SCREEN_HEIGHT//2)
-            #cam = (client_prediction_car.xpos - SCREEN_WIDTH // 2, client_prediction_car.ypos - SCREEN_HEIGHT // 2)
+            #cam = (camfollowing.netxpos.var-SCREEN_WIDTH//2, camfollowing.netypos.var-SCREEN_HEIGHT//2)
+            cam = (client_prediction_car.xpos - SCREEN_WIDTH // 2, client_prediction_car.ypos - SCREEN_HEIGHT // 2)
         #if entity_dict[_id] != camfollowing:
         entity_dict[_id].draw(pg, screen, cam)
 

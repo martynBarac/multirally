@@ -29,7 +29,7 @@ class Player(entity.Entity):
         self.netangle.quantise = 6
         self.netcolour = NetworkVar(self, (255, 255, 0), 4)
         self.gun_range = 500
-
+        self.dead = False
         self.wheeldirection = 0
 
         self.xpos = x
@@ -55,6 +55,8 @@ class Player(entity.Entity):
         self.alpha = 0 # Angluar acceleration
 
         self.health = 100
+        self.nethealth = NetworkVar(self, self.health, 8)
+        self.nethealth.quantise = 0
         self.mass = 10
         self.topSpeed = 10
         self.engine_power = 20
@@ -64,6 +66,8 @@ class Player(entity.Entity):
 
     def update(self, world, actions):
         # world variables
+        if self.dead:
+            return None
         dt = world.dt
 
         lvl0 = world.level["wall"]
@@ -84,10 +88,12 @@ class Player(entity.Entity):
             self.wheeldirection = math.pi/8
         if actions[RIGHTARROW]:
             self.wheeldirection = -math.pi/8
+
         if actions[SHOOT_BUTTON]:
             latency = actions[SHOOT_BUTTON]
             if not world.client_world:
                 self.shoot(world, latency)
+
         self.angle = self.angle % (2 * math.pi)
         self.angle = round(self.angle, 10)
         speed = np.hypot(self.xvel, self.yvel)
@@ -126,6 +132,7 @@ class Player(entity.Entity):
         self.netyvel.set(self.yvel, True)
         self.netangle.set(self.angle, True)
         self.netomega.set(self.omega, True)
+        self.nethealth.set(self.health, True)
         return None
 
     def apply_force(self, theta, mag):
@@ -140,6 +147,7 @@ class Player(entity.Entity):
         self.xacc += accel*xcomp
         self.yacc += accel*ycomp
 
+    #Breaks when you shoot on a wall
     def shoot(self, world, latency):
         """
         We shoot and do lag compensation
@@ -187,7 +195,7 @@ class Player(entity.Entity):
                         if leftpoint < intersect_point[0] < rightpoint:
                             hit_point = intersect_point
                             if toppoint < intersect_point[1] < bottompoint:
-                                pass
+                                entity.get_shot(1)
                                 # The segment hit!
         if hit_point is not None:
             hit = entities.HitMarker(hit_point[0], hit_point[1])
@@ -217,24 +225,28 @@ class Player(entity.Entity):
                     if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos - self.xvel * dt,
                                                                                   self.ypos):
                         self.xpos = col[0] + col[2]
+                        self.take_damage(abs(self.xvel)*0.1)
                         self.xvel = 0
                 # Left side of block
                 elif self.xvel > 0:
                     if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos - self.xvel * dt,
                                                                                   self.ypos):
                         self.xpos = col[0] - self.w
+                        self.take_damage(abs(self.xvel) * 0.1)
                         self.xvel = 0
                 # Bottom side of block
                 if self.yvel < 0:
                     if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos,
                                                                                   self.ypos - self.yvel * dt):
                         self.ypos = col[1] + col[3]
+                        self.take_damage(abs(self.yvel) * 0.1)
                         self.yvel = 0
                 # Top side of block
                 elif self.yvel > 0:
                     if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos,
                                                                                   self.ypos - self.yvel * dt):
                         self.ypos = col[1] - self.h
+                        self.take_damage(abs(self.yvel) * 0.1)
                         self.yvel = 0
 
     def rect_col(self, rect1, rect2):
@@ -297,6 +309,15 @@ class Player(entity.Entity):
                     collided_players.append(player)
         return collided_players
 
+    def get_shot(self, damage):
+        """Take some damage"""
+        self.take_damage(damage)
+
+    def take_damage(self, damage):
+        self.health -= damage
+        if self.health <= 0:
+            self.dead = True
+
 class CPlayer(entity.CEntity):
 
     def __init__(self):
@@ -306,9 +327,10 @@ class CPlayer(entity.CEntity):
         self.netypos = NetworkVar(self, 0, 2, True)
         self.netangle = NetworkVar(self, 0, 3)
         self.netcolour = NetworkVar(self, (0, 0, 0), 4)
-        self.netxvel = NetworkVar(self, 0, 5)
-        self.netyvel = NetworkVar(self, 0, 6)
+        self.netxvel = NetworkVar(self, 0, 5, True)
+        self.netyvel = NetworkVar(self, 0, 6, True)
         self.netomega = NetworkVar(self, 0, 7)
+        self.health = NetworkVar(self, 0, 8)
         self.orgimage = pg.image.load("sprites/car.png").convert_alpha()
         self.colour = (128, 128, 128)
         self.rotimage = self.orgimage.copy()
@@ -321,7 +343,7 @@ class CPlayer(entity.CEntity):
             print("CHANGE!", self.netcolour.var)
 
     def draw(self, pg, screen, cam):
-        rectangle = pg.Rect(self.netxpos.var, self.netypos.var, 16, 16)
+
         deg = self.netangle.var * 180/math.pi
 
         self.rotimage = pg.transform.rotate(self.orgimage, deg)
@@ -329,6 +351,10 @@ class CPlayer(entity.CEntity):
         width = self.rotimage.get_rect().width
         drawx = self.netxpos.var - (width-CAR_SIZE)/2
         drawy = self.netypos.var - (width-CAR_SIZE)/2
-
+        rectangle = pg.Rect(drawx - cam[0], drawy - cam[1], 0.2*self.health.var, 4)
+        rectangle2 = pg.Rect(drawx - cam[0], drawy - cam[1], 20, 4)
         screen.blit(self.rotimage, [drawx-cam[0], drawy-cam[1]])
+        pg.draw.rect(screen, (0,255,0), rectangle)
+        #print(self.health.var)
+        pg.draw.rect(screen, (0, 255, 0), rectangle2, 1)
         return rectangle
