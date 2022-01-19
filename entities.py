@@ -25,7 +25,8 @@ class CHitMarker(entity.CEntity):
         self.netypos = NetworkVar(self, 0, 2)
 
     def draw(self, pg, screen, cam):
-        pg.draw.circle(screen, (200, 0, 0), (self.netxpos.var-cam[0], self.netypos.var-cam[1]), 8)
+        print("HAAAAAAAAAAA")
+        pg.draw.circle(screen, (200, 200, 0), (self.netxpos.var-cam[0], self.netypos.var-cam[1]), 1)
 
 
 class DebugTarget(entity.Entity):
@@ -51,6 +52,9 @@ class DebugTarget(entity.Entity):
         if self.count > 10:
             self.velocity = -self.velocity
             self.count = 0
+
+    def get_shot(self, damage):
+        return
 
 
 class CDebugTarget(entity.CEntity):

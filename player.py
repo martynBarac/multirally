@@ -158,6 +158,7 @@ class Player(entity.Entity):
             self.xpos + math.cos(self.angle) * self.gun_range, self.ypos - math.sin(self.angle) * self.gun_range)
         hitscan_startpoint = (self.xpos, self.ypos)
         hit_point = None
+        hit_entity = None
 
         # Rewind the game
         snapshots_behind = int((latency * 10) // world.dt)
@@ -193,15 +194,17 @@ class Player(entity.Entity):
                             bottompoint = hitscan_endpoint[1]
                             toppoint = hitscan_startpoint[1]
                         if leftpoint < intersect_point[0] < rightpoint:
-                            hit_point = intersect_point
-                            if toppoint < intersect_point[1] < bottompoint:
-                                entity.get_shot(1)
+                            if toppoint > intersect_point[1] > bottompoint:
+                                hit_point = intersect_point
+                                hit_entity = _entity
                                 # The segment hit!
         if hit_point is not None:
             hit = entities.HitMarker(hit_point[0], hit_point[1])
             world.spawn_entity(hit)
         if fastforward is not None:
             world.rewind_to_snapshot(fastforward)  # Fast forward back to the real
+        if hit_entity is not None:
+            hit_entity.get_shot(1)
 
     def do_collision(self, world, lvl0):
         dt = world.dt
