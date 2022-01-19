@@ -163,10 +163,8 @@ while not game_over:
     if time.perf_counter() - start_time > 1/16:
         client_actions = ACTIONS.copy()
         keyboard_inputs = pg.key.get_pressed()
-        print("LOL")
         if keyboard_inputs[pg.K_LEFT]:
             client_actions[LEFTARROW] = True
-            print("TURN")
         if keyboard_inputs[pg.K_RIGHT]:
             client_actions[RIGHTARROW] = True
         if keyboard_inputs[pg.K_UP]:
