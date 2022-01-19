@@ -64,10 +64,10 @@ class Player(entity.Entity):
         self.colour = (255, 255, 255)
         self.image = "sprites/car.png"
 
+        self.strength = 2
+
     def update(self, world, actions):
         # world variables
-        if self.dead:
-            return None
         dt = world.dt
 
         lvl0 = world.level["wall"]
@@ -80,19 +80,19 @@ class Player(entity.Entity):
         self.alpha = 0
         wheel_pos_rear = -8
         wheel_pos_front = 8
-        if actions[UPARROW]:
-            throttle = self.engine_power
-        if actions[DOWNARROW]:
-            throttle = -self.engine_power/2
-        if actions[LEFTARROW]:
-            self.wheeldirection = math.pi/8
-        if actions[RIGHTARROW]:
-            self.wheeldirection = -math.pi/8
-
-        if actions[SHOOT_BUTTON]:
-            latency = actions[SHOOT_BUTTON]
-            if not world.client_world:
-                self.shoot(world, latency)
+        if not self.dead:
+            if actions[UPARROW]:
+                throttle = self.engine_power
+            if actions[DOWNARROW]:
+                throttle = -self.engine_power/2
+            if actions[LEFTARROW]:
+                self.wheeldirection = math.pi/8
+            if actions[RIGHTARROW]:
+                self.wheeldirection = -math.pi/8
+            if actions[SHOOT_BUTTON]:
+                latency = actions[SHOOT_BUTTON]
+                if not world.client_world:
+                    self.shoot(world, latency)
 
         self.angle = self.angle % (2 * math.pi)
         self.angle = round(self.angle, 10)
@@ -225,28 +225,28 @@ class Player(entity.Entity):
                     if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos - self.xvel * dt,
                                                                                   self.ypos):
                         self.xpos = col[0] + col[2]
-                        self.take_damage(abs(self.xvel)*0.1)
+                        self.take_damage(abs(self.xvel)/self.strength)
                         self.xvel = 0
                 # Left side of block
                 elif self.xvel > 0:
                     if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos - self.xvel * dt,
                                                                                   self.ypos):
                         self.xpos = col[0] - self.w
-                        self.take_damage(abs(self.xvel) * 0.1)
+                        self.take_damage(abs(self.xvel) /self.strength)
                         self.xvel = 0
                 # Bottom side of block
                 if self.yvel < 0:
                     if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos,
                                                                                   self.ypos - self.yvel * dt):
                         self.ypos = col[1] + col[3]
-                        self.take_damage(abs(self.yvel) * 0.1)
+                        self.take_damage(abs(self.yvel) /self.strength)
                         self.yvel = 0
                 # Top side of block
                 elif self.yvel > 0:
                     if self.check_wall_col(lvl0, col) and not self.check_wall_col(lvl0, col, self.xpos,
                                                                                   self.ypos - self.yvel * dt):
                         self.ypos = col[1] - self.h
-                        self.take_damage(abs(self.yvel) * 0.1)
+                        self.take_damage(abs(self.yvel)/self.strength)
                         self.yvel = 0
 
     def rect_col(self, rect1, rect2):
@@ -317,6 +317,7 @@ class Player(entity.Entity):
         self.health -= damage
         if self.health <= 0:
             self.dead = True
+            self.health = 0
 
 class CPlayer(entity.CEntity):
 
@@ -354,7 +355,7 @@ class CPlayer(entity.CEntity):
         rectangle = pg.Rect(drawx - cam[0], drawy - cam[1], 0.2*self.health.var, 4)
         rectangle2 = pg.Rect(drawx - cam[0], drawy - cam[1], 20, 4)
         screen.blit(self.rotimage, [drawx-cam[0], drawy-cam[1]])
-        pg.draw.rect(screen, (0,255,0), rectangle)
+        pg.draw.rect(screen, (244,10,0), rectangle)
         #print(self.health.var)
-        pg.draw.rect(screen, (0, 255, 0), rectangle2, 1)
+        pg.draw.rect(screen, (255, 0, 0), rectangle2, 1)
         return rectangle

@@ -309,7 +309,7 @@ while not game_over:
     hitscan_startpoint = (SCREEN_WIDTH//2+6, SCREEN_HEIGHT//2+6)
     hitscan_endpoint = (hitscan_startpoint[0] + math.cos(predictor_line_angle) * 500,
                         hitscan_startpoint[1] - math.sin(predictor_line_angle) * 500)
-    pg.draw.line(screen, (255,0,0), hitscan_startpoint, hitscan_endpoint, 1)
+    pg.draw.line(screen, (0,255,0), hitscan_startpoint, hitscan_endpoint, 1)
 
 
     pg.display.update()
