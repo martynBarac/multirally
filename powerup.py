@@ -51,3 +51,20 @@ class CPowerup(entity.CEntity):
         return rect
 
 
+class PowerupSpawner(entity.Entity):
+    def __init__(self):
+        entity.Entity.__init__(self)
+        self.xpos = 0
+        self.ypos = 0
+        self.count = 0
+        self.powerup = None
+
+    def update(self, world):
+        if self.powerup is None:
+            self.count += world.dt
+            if self.count > 10:
+                self.powerup = Powerup(self.xpos, self.ypos)
+                world.spawn_entity(self.powerup)
+                self.count = 0
+
+

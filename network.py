@@ -68,7 +68,7 @@ class Network:
                     if i == len(msg): self.unread_messages = ""
                     else: self.unread_messages = self.unread_messages[i + 1:] # We read the message so forget it
                 except json.decoder.JSONDecodeError:
-                    print("JsonerrorSUM", msg) # wtf
+                    #print("JsonerrorSUM", msg) # wtf
                     break
 
     def read_oldest_message(self):

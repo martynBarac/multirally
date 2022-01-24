@@ -4,7 +4,6 @@ import entity
 import numpy as np
 from constant import *
 from networkvar import NetworkVar
-from matplotlib import pyplot as plt
 import pygame as pg # Needs to be imported for image loading
 
 UPARROW = '1'
