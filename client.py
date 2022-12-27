@@ -78,7 +78,7 @@ class Dat:
 def do_thing_with_message(_world):
     cf = None
     last_action = None
-    if msg:
+    if msg != -1 and msg is not None:
         st = time.perf_counter()
         if 'NEW' in msg:  # Add new ents first to not cause confusion
             for new_ent in msg['NEW']:  # in new message: [[class_id, entity_id], [class_id, entity_id], ...]
@@ -118,33 +118,9 @@ def do_thing_with_message(_world):
         snapshots.append(msg)
         start_time2.append(st)
     st = time.perf_counter()
-    if len(snapshots) >= SNAPSHOT_WAITTIME:
-        for _id in snapshots[0]:
-            if _id in snapshots[1]:
-                usable_snaps = []
-                for i in snapshots:
-                    if _id in i: usable_snaps.append(i[_id])
-                interp_time = (1 / TICKRATE)*len(snapshots)
-                #entity_dict[_id].apply_data_table_lerp([snapshots[0][_id], snapshots[1][_id]], start_time2, st-interp_time)
-                # Apply all the data we received to the ents
-                if _id in entity_dict:
-                    entity_dict[_id].apply_data_table_lerp(usable_snaps, start_time2, st - interp_time)
-            else:
-                try:
-                    entity_dict[_id].apply_data_table(snapshots[0][_id])
-                except KeyError:
-                    pass
-
-        if len(snapshots) > SNAPSHOT_BUFFER: #Snapshot Buffer
-            start_time2.pop(0)
-            snapshots.pop(0)
-            server_action_numbers.pop(0)
-    else:
-        if msg:
-            for _id in msg:
-                print("no snapshots!")
-                entity_dict[_id].apply_data_table(msg[_id])
-
+    if msg is dict:
+        for _id in msg:
+            entity_dict[_id].apply_data_table(msg[_id])
     return cf, server_action_numbers[0], _world
 
 debug_dots_enable = False

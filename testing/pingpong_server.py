@@ -34,7 +34,7 @@ class Server:
         for s in readable:
             if s == self.sock:
                 conn, addr = s.accept()
-                #conn.setblocking(0)
+                s.setblocking(0)
                 self.maybe_readable.append(conn)
                 self.maybe_writeable.append(conn)
                 self.network_dict[conn] = Network(conn)
@@ -45,7 +45,7 @@ class Server:
                     self.network_dict[s].load_unread_messages()
                     while True:
                         msg = self.network_dict[s].read_oldest_message()
-                        if msg is None:
+                        if msg == -1:
                             break
                         self.client_input_table[s] = msg
                         self.client_last_action_number[s] = msg['PING']
@@ -63,4 +63,4 @@ class Server:
 server = Server(socket.gethostbyname(socket.gethostname() ), 2302)
 while True:
     server.update()
-    time.sleep(1 / 64)
+    time.sleep(1/32)

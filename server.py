@@ -48,7 +48,7 @@ class Server:
                     self.network_dict[s].load_unread_messages()
                     while True:
                         msg = self.network_dict[s].read_oldest_message()
-                        if msg is None:
+                        if msg == -1:
                             break
                         self.client_input_table[s] = msg
                         self.client_last_action_number[s] = msg['a']
@@ -75,7 +75,7 @@ class Server:
                         self.data_table[s]["ACT"] = self.client_last_action_number[s]
                     self.network_dict[s].send_msg(self.data_table[s])
 
-        time.sleep(1 / 64)
+        time.sleep(1 / 32)
         # Start updating world
         self.data_table = self.world.update(self.client_input_table)
         self.world.dt = (time.perf_counter()-self.start_time)*10

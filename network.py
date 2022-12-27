@@ -77,7 +77,8 @@ class Network:
             temp = self.messages_to_read.copy()
             msg = temp[0]
             self.messages_to_read.pop(0)
-        return msg
+            return msg
+        return -1
 
     def send_msg(self, message):
         msg_json = json.dumps(message)
