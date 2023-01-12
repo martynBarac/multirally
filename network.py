@@ -77,6 +77,7 @@ class Network:
             temp = self.messages_to_read.copy()
             msg = temp[0]
             self.messages_to_read.pop(0)
+
         return msg
 
     def send_msg(self, message):

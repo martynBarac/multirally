@@ -1,12 +1,13 @@
 
 class NetworkVar:
 
-    def __init__(self, ent, var, _id, lerp=False):
+    def __init__(self, ent, var, _id, lerp=False, slerp=False):
         self.var = var
         self.oldvar = var
         self.ent = ent
         self.updated = {} #Updated for client. {Client: Updated}
         self.lerp = lerp
+        self.slerp = slerp
         self.quantise = -1
         self.only_send_to_owner = 0
 

@@ -52,8 +52,7 @@ class Server:
                             break
                         self.client_input_table[s] = msg
                         self.client_last_action_number[s] = msg['a']
-                    print(self.network_dict[s].messages_to_read)
-                except ConnectionResetError:
+                except (ConnectionResetError, ConnectionAbortedError):
                     del(self.network_dict[s])
                     self.maybe_readable.remove(s)
                     self.maybe_writeable.remove(s)
@@ -75,10 +74,15 @@ class Server:
                         self.data_table[s]["ACT"] = self.client_last_action_number[s]
                     self.network_dict[s].send_msg(self.data_table[s])
 
-        time.sleep(1 / 64)
+
         # Start updating world
-        self.data_table = self.world.update(self.client_input_table)
-        self.world.dt = (time.perf_counter()-self.start_time)*10
+        self.data_table = self.world.update(self.client_input_table) # big slow update
+
+        time_elapsed = time.perf_counter() - self.start_time
+        self.world.dt = (time_elapsed) * 10
         self.start_time = time.perf_counter()
+
+        time.sleep(max(1 / 8 - time.perf_counter()+self.start_time, 0))
+
 
 

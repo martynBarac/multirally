@@ -29,8 +29,7 @@ class World:
         self.collision_sectors = [[]]
         self.collision_sector_size = 256
         self.entites_to_spawn = [] #Q ueue up entities to spawn in the next frame
-        self.add_new_entity(entity_table.entity_table[4][0](128, 128))
-
+        #self.add_new_entity(entity_table.entity_table[4][0](64, 64))
 
     def add_new_player(self, client, name):
         spawnx, spawny = self.level["spawn"][0] # Get first spawn point

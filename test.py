@@ -35,6 +35,7 @@ def world_test():
 
 
 def server_test():
+
     # socket.gethostbyname(socket.gethostname() gets ip address
     my_server = server.Server( socket.gethostbyname(socket.gethostname() ), 2302, "level0")
     my_server.world.add_new_entity(Powerup(128, 128, 0))
@@ -55,7 +56,4 @@ def client_test():
         msg = my_client.receive_msg()
         print(msg)
 
-#server_test()
-x = threading.Thread(target = server_test)
-x.start()
-exec(open("client.py").read(), globals())
+server_test()

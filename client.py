@@ -11,7 +11,7 @@ import numpy as np
 import world
 import winsound
 
-SNAPSHOT_BUFFER = 3
+SNAPSHOT_BUFFER = 4
 SNAPSHOT_WAITTIME = 2
 SCREEN_SIZE = SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 print("AG", sys.argv)
@@ -65,7 +65,7 @@ camfollowing_oldnetangle = 0
 server_last_action = None
 client_prediction_car = entity_table.entity_table[1][0](0,0,0,'player')
 client_prediction_world = None
-CLIENT_PREDICTION_PRESICION = 2
+CLIENT_PREDICTION_PRESICION = 5
 msg = None
 static_ents = [] # Entities that are static in the level
 myfont = pg.font.SysFont('Comic Sans MS', 30)
@@ -202,7 +202,7 @@ while not game_over:
         client_prediction_car.xvel = camfollowing.netxvel.var
         client_prediction_car.yvel = camfollowing.netyvel.var
         client_prediction_car.omega = camfollowing.netomega.var
-
+        client_prediction_car.health = 100
     # Client prediction
     if client_prediction_world is not None and server_last_action is not None:
         # Apply new thing and do last action
@@ -220,6 +220,7 @@ while not game_over:
 
                 if not done:
                     latency = server_reaction_time - action["TIME"]
+                    #latency = (1/8)*2
                     # When we press a key, how long until the server responds?
                     done = True
                 if action['a'] > server_last_action:
@@ -233,7 +234,7 @@ while not game_over:
                     dt2 = latency
                     if time_released:
                         dt2 = latency-(time.perf_counter()-time_released)
-                client_prediction_world.dt = dt2*10/CLIENT_PREDICTION_PRESICION
+                client_prediction_world.dt = dt2*5/CLIENT_PREDICTION_PRESICION
                 for i in range(CLIENT_PREDICTION_PRESICION):
                     client_prediction_car.update(client_prediction_world, action)
     try:
