@@ -1,5 +1,7 @@
 
 import time
+
+import constant
 from network import *
 import select
 import world
@@ -82,7 +84,7 @@ class Server:
         self.world.dt = (time_elapsed) * 10
         self.start_time = time.perf_counter()
 
-        time.sleep(max(1 / 8 - time.perf_counter()+self.start_time, 0))
+        time.sleep(max(1 / constant.TICKRATE - time.perf_counter()+self.start_time, 0))
 
 
 

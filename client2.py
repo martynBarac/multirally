@@ -12,7 +12,10 @@ import sys
 import numpy as np
 import world
 
+"""
 
+TODO: Snapshot list should undo delta compression for easy interp
+"""
 class Client:
     def __init__(self, ip, port):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -25,13 +28,14 @@ class Client:
         self.action_history = []
         self.action_number = 0
         self.tick_number = 0
-        self.tickrate = 64
+        self.tickrate = 16
+        self.framerate = 64
 
         self.entity_dict = {}
         self.static_ents = []
         self.dat_lvl = {"wall":[]}
         self.snapshots = {}
-        self.lerp_delay_ticks = 64
+        self.lerp_delay_ticks = 16
 
         self.camera_ent = None
         self.SCREEN_WIDTH = 640
@@ -46,7 +50,7 @@ class Client:
     def main_loop(self):
         game_running = True
         start_time = time.perf_counter()
-
+        start_time_framerate = time.perf_counter()
         while game_running:
             for event in pg.event.get():
                 if event.type == pg.QUIT:
@@ -64,13 +68,17 @@ class Client:
             end_time = time.perf_counter()
             if end_time - start_time >= 1/self.tickrate:
                 self.get_inputs()
+                self.client_prediction(self.camera_ent)
                 start_time = time.perf_counter()
 
-                self.tick_number+=1
 
-            self.update_entity_table()
-            self.client_prediction(self.camera_ent)
-            self.draw_entities()
+                self.tick_number+=1
+            end_time = time.perf_counter()
+
+            if end_time - start_time_framerate >= 1/self.framerate:
+                self.update_entity_table()
+                self.draw_entities()
+                start_time_framerate = time.perf_counter()
 
     def get_inputs(self):
         client_actions = ACTIONS.copy()
@@ -159,9 +167,15 @@ class Client:
                 last_action = int(msg['ACT'])
                 del msg['ACT']
             if msg:
-                for _id in msg:
-                    msg[_id]["TICK"] = str(self.tick_number)
-                    self.entity_dict[_id].snapshots.append(msg[_id])
+                for _id in self.entity_dict:
+                    if _id in msg:
+                        msg[_id]["TICK"] = str(self.tick_number)
+                        self.entity_dict[_id].snapshots.append(msg[_id])
+                    else:
+                        decompress = self.entity_dict[_id].snapshots[-1].copy()
+                        decompress["TICK"] = str(self.tick_number)
+                        self.entity_dict[_id].snapshots.append(decompress)
+
         return
 
     def update_entity_table(self):
@@ -173,6 +187,7 @@ class Client:
         self.screen.fill((0, 0, 0))
         end_time = time.perf_counter()
         if self.prediction_world is not None: self.prediction_world.dt = end_time-self.loop_start_time
+        cam = (0,0)
         for _id in self.entity_dict:
             self.entity_dict[_id].update(self.prediction_world)
             cam = (self.camera_ent.netxpos.var-self.SCREEN_WIDTH//2, self.camera_ent.netypos.var-self.SCREEN_HEIGHT//2)
@@ -181,7 +196,6 @@ class Client:
         # Draw client ents
         for prop in self.static_ents:
             prop.draw(pg, self.screen, cam)
-        self.prediction_car
         if self.dat_lvl is not None:
             for wall in self.dat_lvl["wall"]:
                 pg.draw.rect(self.screen, (255, 255, 255), [wall[0] - cam[0], wall[1] - cam[1], wall[2], wall[3]])
@@ -208,8 +222,8 @@ class Client:
         self.prediction_car.angle = player_car.netangle.var
         self.prediction_car.xpos = player_car.netxpos.var
         self.prediction_car.ypos = player_car.netypos.var
-        #self.prediction_car.xvel = player_car.netxvel.var
-        #self.prediction_car.yvel = player_car.netyvel.var
+        self.prediction_car.xvel = player_car.netxvel.var
+        self.prediction_car.yvel = player_car.netyvel.var
         self.prediction_car.omega = player_car.netomega.var
         self.prediction_car.health = 100
         self.prediction_car.dead = False
@@ -219,18 +233,26 @@ class Client:
             if i > len(self.action_history)-1:
                 break
             if i == len(self.action_history) - 1:
+
                 time1 = self.action_history[i]["TICK"]
                 time2 = self.tick_number
             else:
                 time1 = self.action_history[i]["TICK"]
                 time2 = self.action_history[i+1]["TICK"]
-            time1 = max(time1, self.tick_number-self.lerp_delay_ticks)
+            time1 = max(time1, self.tick_number-self.lerp_delay_ticks-1)
             self.prediction_world.dt = 10 / self.tickrate
             if time2 >= self.tick_number-self.lerp_delay_ticks:
-                for j in range((time2-time1)+1):
+                for j in range((time2-time1)):
                     self.prediction_car.update(self.prediction_world, self.action_history[i])
+
+                    # Update static entities
+                    for sEnt in self.prediction_world.static_entities:
+                        sEnt.update(self.prediction_world)
             else:
                 self.action_history.pop(i)
+                continue
+
             #print(len(self.action_history))
             i+=1
         return
+

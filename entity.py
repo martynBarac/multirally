@@ -1,5 +1,6 @@
 import constant
 import math
+import numpy
 
 class Entity:
     def __init__(self):
@@ -70,37 +71,59 @@ class Entity:
                     __id = int(_id)
                     net_var = self.data_table[__id]
                     if net_var.lerp:
-                        print(len(self.snapshots))
                         if i+1 < len(self.snapshots):
                             k = -1
                             for j in range(len(self.snapshots[i:])-1):
                                 if _id in self.snapshots[i+j+1]:
                                     k = j+1
-                                    #FIXNOW
+                                    break
                             if k > 0:
                                 time2 = int(self.snapshots[i+k]["TICK"])
                                 if time2 >= tick:
-                                    if time2-time > 8:
-                                        time = time2 - 8
+                                    if time2-time >= constant.TICKRATE:
+                                        time = time2 - constant.TICKRATE
                                         self.snapshots[i]["TICK"] = str(time)
-                                        if time > tick: continue
+                                        if time > tick: break
                                     y0 = self.snapshots[i][_id]
                                     y1 = self.snapshots[i+k][_id]
                                     if time2 == time:
-                                        y = y
+                                        y = y1
                                     else:
                                         x1 = time2
-                                        x = tick
                                         x0 = time
-                                        y = y0 * (x1 - x) / (x1 - x0) + y1 * (x - x0) / (x1 - x0)
+                                        if net_var.slerp and not y0 == 0:
+                                            x = (x0-tick)/(x0-x1)
+                                            y = ((y1-y0+math.pi)%(2*math.pi)-math.pi)*x+y0
+
+                                        else:
+                                            x = tick
+                                            y = y0 * (x1 - x) / (x1 - x0) + y1 * (x - x0) / (x1 - x0)
                                     net_var.var = y
                                 else:
                                     self.snapshots.pop(i)
+                                    i -=1
                                     break
+                           # else:
+                                #net_var.var = self.snapshots[i][_id]
                         else:
                             net_var.var = self.snapshots[i][_id]
                     else:
                         net_var.var = self.snapshots[i][_id]
+
+            """else:
+                for _id in self.snapshots[i]:
+                    if _id == "TICK": continue
+                    __id = int(_id)
+
+                    net_var = self.data_table[__id]
+                    if net_var.lerp:
+                        y0 = net_var.var
+                        y1 = self.snapshots[i][_id]
+                        #x1 = time
+                        #x = tick
+                        #x0 = time-constant.TICKRATE
+                        #y = y0 * (x1 - x) / (x1 - x0) + y1 * (x - x0) / (x1 - x0)
+                        net_var.var += (y1 - net_var.var)/2"""
 
             i+=1
 
@@ -116,11 +139,11 @@ class Entity:
                     elif self.data_table[__id].slerp:
                         y0 = datatable1[_id]
                         y1 = datatable2[_id]
-                        if abs(y0-y1) <= math.pi:
-                            y = y0 * (x1-x)/(x1-x0) + y1 * (x-x0)/(x1-x0)
-                            self.data_table[__id].var = y
-                        else:
-                            self.data_table[__id].var = y1
+                        #if abs(y0-y1) <= math.pi:
+                        #    y = y0 * (x1-x)/(x1-x0) + y1 * (x-x0)/(x1-x0)
+                        #    self.data_table[__id].var = y
+                        #else:
+                        self.data_table[__id].var = y0
                     elif self.data_table[__id].lerp:
                         y0 = datatable1[_id]
                         y1 = datatable2[_id]
