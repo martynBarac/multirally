@@ -19,9 +19,9 @@ class Player(entity.Entity):
         self.owner = owner
         self.shootable = True
         self.name = NetworkVar(self, name, 0)
-        self.netxpos = NetworkVar(self, x, 1)
+        self.netxpos = NetworkVar(self, x, 1, True)
         self.netxpos.quantise = 2
-        self.netypos = NetworkVar(self, y, 2)
+        self.netypos = NetworkVar(self, y, 2, True)
         self.netypos.quantise = 2
         self.angle = angle
         self.netangle = NetworkVar(self, angle, 3)
@@ -39,10 +39,10 @@ class Player(entity.Entity):
 
         self.xvel = 0
         self.yvel = 0
-        self.netxvel = NetworkVar(self, self.xvel, 5)
+        self.netxvel = NetworkVar(self, self.xvel, 5, True)
         self.netxvel.quantise = 2
         self.netxvel.only_send_to_owner = True
-        self.netyvel = NetworkVar(self, self.yvel, 6)
+        self.netyvel = NetworkVar(self, self.yvel, 6, True)
         self.netyvel.quantise = 2
         self.netyvel.only_send_to_owner = True
         self.xacc = 0
@@ -80,19 +80,26 @@ class Player(entity.Entity):
         wheel_pos_rear = -8
         wheel_pos_front = 8
         if not self.dead:
-            if actions[UPARROW]:
-                throttle = self.engine_power
-            if actions[DOWNARROW]:
-                throttle = -self.engine_power/2
-            if actions[LEFTARROW]:
-                self.wheeldirection = math.pi/8
-            if actions[RIGHTARROW]:
-                self.wheeldirection = -math.pi/8
-            if actions[SHOOT_BUTTON]:
-                latency = actions[SHOOT_BUTTON]
-                if not world.client_world:
-                    self.shoot(world, latency)
-
+            self.yvel=0
+            self.xvel = 0
+            if UPARROW in actions:
+                if actions[UPARROW]:
+                    throttle = self.engine_power
+                    self.yvel =-10
+                elif actions[DOWNARROW]:
+                    throttle = -self.engine_power/2
+                    self.yvel = 10
+                if actions[LEFTARROW]:
+                    self.wheeldirection = math.pi/8
+                    self.xvel = -10
+                elif actions[RIGHTARROW]:
+                    self.wheeldirection = -math.pi/8
+                    self.xvel = 10
+                if actions[SHOOT_BUTTON]:
+                    latency = actions[SHOOT_BUTTON]
+                    if not world.client_world:
+                        self.shoot(world, latency)
+        """
         self.angle = self.angle % (2 * math.pi)
         self.angle = round(self.angle, 10)
         speed = np.hypot(self.xvel, self.yvel)
@@ -114,6 +121,9 @@ class Player(entity.Entity):
         self.apply_force(0, throttle)
         self.apply_force(0, -force_drag)
         self.apply_force(math.pi/2, force_drag_lat)
+        """
+
+
         # Apply the goods
         self.omega += self.alpha * dt
         self.xvel += self.xacc*dt
@@ -321,14 +331,14 @@ class Player(entity.Entity):
             self.dead = True
             self.health = 0
 
-class CPlayer(entity.CEntity):
 
+class CPlayer(entity.CEntity):
     def __init__(self):
         entity.CEntity.__init__(self)
         self.name = NetworkVar(self, "", 0)
         self.netxpos = NetworkVar(self, 0, 1, True)
         self.netypos = NetworkVar(self, 0, 2, True)
-        self.netangle = NetworkVar(self, 0, 3)
+        self.netangle = NetworkVar(self, 0, 3, True, True)
         self.netcolour = NetworkVar(self, (0, 0, 0), 4)
         self.netxvel = NetworkVar(self, 0, 5, True)
         self.netyvel = NetworkVar(self, 0, 6, True)

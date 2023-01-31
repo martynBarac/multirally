@@ -38,7 +38,7 @@ class DebugTarget(entity.Entity):
         self.netxpos = NetworkVar(self, x, 1)
         self.netypos = NetworkVar(self, y, 2)
         self.count = 0
-        self.velocity = 30
+        self.velocity = 0.1
 
     def get_collision_bounds(self):
         return [(self.netxpos.var-self.w, self.netypos.var-self.w),
@@ -47,11 +47,7 @@ class DebugTarget(entity.Entity):
                 (self.netxpos.var+self.w, self.netypos.var+self.w)]
 
     def update(self, world):
-        self.count += world.dt
         self.netxpos.set(self.netxpos.var + self.velocity*world.dt, True)
-        if self.count > 10:
-            self.velocity = -self.velocity
-            self.count = 0
 
     def get_shot(self, damage):
         return
