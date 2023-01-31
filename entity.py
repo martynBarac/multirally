@@ -16,7 +16,8 @@ class Entity:
         # If the entity is shootable it needs collision bounds
         self.shootable = False
         self.owner = None
-        self.snapshots = {"TICK":[]}
+        self.snapshots = {}
+        self.snapshots_xvals = {}
         pass
 
     def update(self, world):
@@ -63,20 +64,20 @@ class Entity:
             return True
 
     def apply_data_table(self, tick, delay):
-        i = 0
-        while True:
-            xvals = self.snapshots["TICK"]
-            for netvar in self.snapshots:
-                if netvar == "TICK": continue
-                if self.data_table[netvar].lerp:
-                    yvals = self.snapshots[netvar]
+        for netvar in self.snapshots:
+            if self.data_table[netvar].lerp:
+                yvals = self.snapshots[netvar]
+                xvals = self.snapshots_xvals[netvar]
+                if len(xvals) != 0:
                     y = np.interp(tick, xvals, yvals)
                     self.data_table[netvar].var = y
-                else:
-                    self.data_table[netvar].var = self.snapshots[netvar][-1]
-                    self.snapshots[netvar] = [self.snapshots[netvar][-1]]
-            i+=1
-
+                    mask = self.snapshots_xvals[netvar] > tick-delay*2
+                    self.snapshots_xvals[netvar] = self.snapshots_xvals[netvar][mask]
+                    self.snapshots[netvar] = self.snapshots[netvar][mask]
+            else:
+                self.data_table[netvar].var = self.snapshots[netvar][-1]
+                self.snapshots[netvar] = [self.snapshots[netvar][-1]]
+                self.snapshots_xvals[netvar] = [self.snapshots[netvar][-1]]
 
     def apply_data_table_lerp(self, datatable1, datatable2, x, x0, x1):
         if datatable1 is not None:

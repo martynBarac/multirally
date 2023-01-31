@@ -1,4 +1,4 @@
 set /p ADDR="ip:port > "
 echo %ADDR%
-python client.py %ADDR%
+python client_test.py %ADDR%
 pause

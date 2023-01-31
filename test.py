@@ -45,8 +45,8 @@ def server_test():
 
 def client_test():
 
-    port = 27014
-    ip = "192.168.0.17"
+    port = 27015
+    ip = "192.168.0.19"
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     my_client = network.Network(sock)

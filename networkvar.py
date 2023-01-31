@@ -1,3 +1,4 @@
+import numpy as np
 
 class NetworkVar:
 
@@ -12,7 +13,8 @@ class NetworkVar:
         self.only_send_to_owner = 0
 
         ent.data_table[_id] = self
-        ent.snapshots[_id] = [self.var]
+        ent.snapshots[_id] = np.array([])
+        ent.snapshots_xvals[_id] = np.array([])
 
     def get(self, dt):
         return self.var

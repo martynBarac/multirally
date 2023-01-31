@@ -349,7 +349,7 @@ class CPlayer(entity.CEntity):
         self.rotimage = self.orgimage.copy()
 
     def update(self, world=None ,actions=None):
-        if self.netcolour.var != self.colour:
+        if np.array_equal(self.netcolour.var, self.colour):
             self.colour = self.netcolour.var
             self.orgimage = pg.image.load("sprites/car.png").convert_alpha()
             self.orgimage.fill(self.colour, None, pg.BLEND_MULT)
