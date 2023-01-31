@@ -80,23 +80,26 @@ class Player(entity.Entity):
         wheel_pos_rear = -8
         wheel_pos_front = 8
         if not self.dead:
-            #self.yvel=0
-            if actions[UPARROW]:
-                throttle = self.engine_power
-                #self.yvel =-10
-            elif actions[DOWNARROW]:
-                throttle = -self.engine_power/2
-                #self.yvel = 10
-            if actions[LEFTARROW]:
-                self.wheeldirection = math.pi/8
-            elif actions[RIGHTARROW]:
-                self.wheeldirection = -math.pi/8
-
-            if actions[SHOOT_BUTTON]:
-                latency = actions[SHOOT_BUTTON]
-                if not world.client_world:
-                    self.shoot(world, latency)
-
+            self.yvel=0
+            self.xvel = 0
+            if UPARROW in actions:
+                if actions[UPARROW]:
+                    throttle = self.engine_power
+                    self.yvel =-10
+                elif actions[DOWNARROW]:
+                    throttle = -self.engine_power/2
+                    self.yvel = 10
+                if actions[LEFTARROW]:
+                    self.wheeldirection = math.pi/8
+                    self.xvel = -10
+                elif actions[RIGHTARROW]:
+                    self.wheeldirection = -math.pi/8
+                    self.xvel = 10
+                if actions[SHOOT_BUTTON]:
+                    latency = actions[SHOOT_BUTTON]
+                    if not world.client_world:
+                        self.shoot(world, latency)
+        """
         self.angle = self.angle % (2 * math.pi)
         self.angle = round(self.angle, 10)
         speed = np.hypot(self.xvel, self.yvel)
@@ -118,6 +121,8 @@ class Player(entity.Entity):
         self.apply_force(0, throttle)
         self.apply_force(0, -force_drag)
         self.apply_force(math.pi/2, force_drag_lat)
+        """
+
 
         # Apply the goods
         self.omega += self.alpha * dt

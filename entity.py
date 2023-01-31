@@ -1,6 +1,7 @@
 import constant
 import math
 import numpy
+import numpy as np
 
 class Entity:
     def __init__(self):
@@ -15,7 +16,7 @@ class Entity:
         # If the entity is shootable it needs collision bounds
         self.shootable = False
         self.owner = None
-        self.snapshots = []
+        self.snapshots = {"TICK":[]}
         pass
 
     def update(self, world):
@@ -63,68 +64,17 @@ class Entity:
 
     def apply_data_table(self, tick, delay):
         i = 0
-        while i < len(self.snapshots):
-            time = int(self.snapshots[i]["TICK"])
-            if time <= tick:
-                for _id in self.snapshots[i]:
-                    if _id == "TICK": continue
-                    __id = int(_id)
-                    net_var = self.data_table[__id]
-                    if net_var.lerp:
-                        if i+1 < len(self.snapshots):
-                            k = -1
-                            for j in range(len(self.snapshots[i:])-1):
-                                if _id in self.snapshots[i+j+1]:
-                                    k = j+1
-                                    break
-                            if k > 0:
-                                time2 = int(self.snapshots[i+k]["TICK"])
-                                if time2 >= tick:
-                                    if time2-time >= constant.TICKRATE:
-                                        time = time2 - constant.TICKRATE
-                                        self.snapshots[i]["TICK"] = str(time)
-                                        if time > tick: break
-                                    y0 = self.snapshots[i][_id]
-                                    y1 = self.snapshots[i+k][_id]
-                                    if time2 == time:
-                                        y = y1
-                                    else:
-                                        x1 = time2
-                                        x0 = time
-                                        if net_var.slerp and not y0 == 0:
-                                            x = (x0-tick)/(x0-x1)
-                                            y = ((y1-y0+math.pi)%(2*math.pi)-math.pi)*x+y0
-
-                                        else:
-                                            x = tick
-                                            y = y0 * (x1 - x) / (x1 - x0) + y1 * (x - x0) / (x1 - x0)
-                                    net_var.var = y
-                                else:
-                                    self.snapshots.pop(i)
-                                    i -=1
-                                    break
-                           # else:
-                                #net_var.var = self.snapshots[i][_id]
-                        else:
-                            net_var.var = self.snapshots[i][_id]
-                    else:
-                        net_var.var = self.snapshots[i][_id]
-
-            """else:
-                for _id in self.snapshots[i]:
-                    if _id == "TICK": continue
-                    __id = int(_id)
-
-                    net_var = self.data_table[__id]
-                    if net_var.lerp:
-                        y0 = net_var.var
-                        y1 = self.snapshots[i][_id]
-                        #x1 = time
-                        #x = tick
-                        #x0 = time-constant.TICKRATE
-                        #y = y0 * (x1 - x) / (x1 - x0) + y1 * (x - x0) / (x1 - x0)
-                        net_var.var += (y1 - net_var.var)/2"""
-
+        while True:
+            xvals = self.snapshots["TICK"]
+            for netvar in self.snapshots:
+                if netvar == "TICK": continue
+                if self.data_table[netvar].lerp:
+                    yvals = self.snapshots[netvar]
+                    y = np.interp(tick, xvals, yvals)
+                    self.data_table[netvar].var = y
+                else:
+                    self.data_table[netvar].var = self.snapshots[netvar][-1]
+                    self.snapshots[netvar] = [self.snapshots[netvar][-1]]
             i+=1
 
 

@@ -1,17 +1,19 @@
 import socket
 import random
 import json
+import time
+
 from player import Player
 from powerup import Powerup
 
-BUFFERSIZE = 500
+BUFFERSIZE = 8000
 
 HEAD_PINFO = "PINF"
 HEAD_USERINFO = "UINF"
 HEAD_PLAYERINPUT = "PINP"
 HEAD_POWERINFO = "POWR"
 TICKRATE = 30
-
+FAKE_LOSS_CHANCE = 0.00
 
 class Network:
     def __init__(self, sock):
@@ -19,8 +21,10 @@ class Network:
         self.sock = sock
         self.message_number = 0
         self.messages_to_send = []
-        self.unread_messages = ""
-        self.messages_to_read = []
+        self.unread_messages = {}
+        self.messages_to_read = {}
+        self.start_time = time.perf_counter()
+        self.bytes_recvd = 0
 
     def __del__(self):
         self.close()
@@ -43,53 +47,73 @@ class Network:
 
     def receive_msg(self):
         # Simply recieve the message as a json string and return it
-        msg_bytes = self.sock.recv(BUFFERSIZE)
-        msg_json = msg_bytes.decode()
-        self.unread_messages = self.unread_messages+msg_json
-        return msg_json
+        try:
+            msg_bytes, msg_addr = self.sock.recvfrom(BUFFERSIZE)
+            msg_json = msg_bytes.decode()
+            self.bytes_recvd += len(msg_bytes)
+            if msg_addr in self.unread_messages:
+                self.unread_messages[msg_addr] = self.unread_messages[msg_addr]+msg_json
+            else:
+                self.unread_messages[msg_addr] = msg_json
+            return msg_json, msg_addr
+        except BlockingIOError:
+            return None, None
 
-    def load_unread_messages(self):
+    def load_unread_messages(self, addr):
         # load the unread messages from json into a list
-        msg = self.unread_messages
+
+        if addr not in self.unread_messages:
+            self.unread_messages[addr] = ""
+            self.messages_to_read[addr] = []
+        msg = self.unread_messages[addr]
         for i in range(len(msg)):
             msg2 = None
             # the very end of the string detected
             if i == len(msg)-1:
-                msg2 = self.unread_messages
+                msg2 = self.unread_messages[addr]
 
 
             elif i + 1 < len(msg):
                 # End of the message detected
                 if msg[i] + msg[i + 1] == "}{":
-                    msg2 = self.unread_messages[:i + 1]
+                    msg2 = self.unread_messages[addr][:i + 1]
             if msg2:
                 try:
-                    self.messages_to_read.append(json.loads(msg2)) # Try to load it
-                    if i == len(msg): self.unread_messages = ""
-                    else: self.unread_messages = self.unread_messages[i + 1:] # We read the message so forget it
+                    self.messages_to_read[addr].append(json.loads(msg2)) # Try to load it
+                    if i == len(msg): self.unread_messages[addr] = ""
+                    else: self.unread_messages[addr] = self.unread_messages[addr][i + 1:] # We read the message so forget it
                 except json.decoder.JSONDecodeError:
                     #print("JsonerrorSUM", msg) # wtf
                     break
 
-    def read_oldest_message(self):
-        msg = None
-        if self.messages_to_read:
-            temp = self.messages_to_read.copy()
+    def add_client(self, addr):
+        self.messages_to_read[addr] = []
+        self.unread_messages[addr] = ""
+
+    def read_oldest_message(self, addr):
+        msg = 0
+        if self.messages_to_read[addr]:
+            temp = self.messages_to_read[addr].copy()
             msg = temp[0]
-            self.messages_to_read.pop(0)
+            self.messages_to_read[addr].pop(0)
 
         return msg
 
-    def send_msg(self, message):
+    def send_msg(self, message, addr):
+        randchance = random.uniform(0, 1)
+        if randchance < FAKE_LOSS_CHANCE:
+            return
         msg_json = json.dumps(message)
         msg_bytes = msg_json.encode()
         sent_bytes = 0
         msg_length = len(msg_bytes)
         while msg_length > sent_bytes:
-            sent = self.sock.send(msg_bytes[sent_bytes:])
+
+            sent = self.sock.sendto(msg_bytes[sent_bytes:], addr)
             if sent == 0:
                 raise RuntimeError("socket connection broken")
             sent_bytes += sent
+
 
     def send_ack(self, n):
         message = ("ACK", n)

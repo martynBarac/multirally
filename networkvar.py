@@ -12,6 +12,7 @@ class NetworkVar:
         self.only_send_to_owner = 0
 
         ent.data_table[_id] = self
+        ent.snapshots[_id] = [self.var]
 
     def get(self, dt):
         return self.var

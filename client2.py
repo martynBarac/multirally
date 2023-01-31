@@ -16,20 +16,27 @@ import world
 
 TODO: Snapshot list should undo delta compression for easy interp
 """
+
+
 class Client:
     def __init__(self, ip, port):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.net_client = Network(self.sock)
-        self.net_client.connect(ip, port)
+        self.server_addr = (ip, port)
+        self.net_client.sock.sendto(b"connect", self.server_addr)
         self.net_client.sock.setblocking(0)
+        self.net_client.add_client(self.server_addr)
         print("connected!")
 
         self.latency = 0
         self.action_history = []
         self.action_number = 0
         self.tick_number = 0
-        self.tickrate = 16
+        self.input_tick_number = 0
+        self.action_send_rate = 16
+        self.tickrate = 64
         self.framerate = 64
+        self.ack_rate = 3
 
         self.entity_dict = {}
         self.static_ents = []
@@ -47,10 +54,17 @@ class Client:
         self.prediction_car = entity_table.entity_table[1][0](0,0,0,'player')
         self.prediction_world = None
         self.loop_start_time = time.perf_counter()
+
+        self.acked_message_numbers = []
+
+        self.latency_list = np.array([0,0,0,0])
+
     def main_loop(self):
         game_running = True
         start_time = time.perf_counter()
         start_time_framerate = time.perf_counter()
+        start_time_ack = time.perf_counter()
+        start_time_input_send = time.perf_counter()
         while game_running:
             for event in pg.event.get():
                 if event.type == pg.QUIT:
@@ -58,28 +72,35 @@ class Client:
 
             try:
                 self.net_client.receive_msg()
+                pass
             except BlockingIOError:
                 pass
-            self.net_client.load_unread_messages()
-            msg = self.net_client.read_oldest_message()
-
+            self.net_client.load_unread_messages(self.server_addr)
+            msg = self.net_client.read_oldest_message(self.server_addr)
             self.process_server_message(msg)
 
             end_time = time.perf_counter()
-            if end_time - start_time >= 1/self.tickrate:
+            if end_time - start_time_input_send >= 1 / self.action_send_rate:
                 self.get_inputs()
+                start_time_input_send = time.perf_counter()
+                self.input_tick_number += 1
+
+            end_time = time.perf_counter()
+            if end_time - start_time >= 1/self.tickrate:
                 self.client_prediction(self.camera_ent)
                 start_time = time.perf_counter()
+                self.tick_number += 1
+
+            if end_time - start_time_ack >= 1/self.ack_rate:
+                self.net_client.send_msg({"N": self.acked_message_numbers}, self.server_addr)
+                start_time_ack = time.perf_counter()
 
 
-                self.tick_number+=1
             end_time = time.perf_counter()
-
             if end_time - start_time_framerate >= 1/self.framerate:
                 self.update_entity_table()
                 self.draw_entities()
                 start_time_framerate = time.perf_counter()
-
     def get_inputs(self):
         client_actions = ACTIONS.copy()
         keyboard_inputs = pg.key.get_pressed()
@@ -99,7 +120,7 @@ class Client:
         if self.is_action_different(client_actions):
             self.send_inputs(client_actions)
             self.action_number += 1
-            client_actions["TICK"] = self.tick_number
+            client_actions["TICK"] = self.input_tick_number
             self.action_history.append(client_actions.copy())
         return
 
@@ -117,25 +138,38 @@ class Client:
         return True
 
     def send_inputs(self, inputs):
-        self.net_client.send_msg(inputs)
+        self.net_client.send_msg(inputs, self.server_addr)
+
         return
 
     def receive_server_msg(self):
         return
 
     def process_server_message(self, msg):
-        self.process_server_snapshot(msg)
-        return
-
-    def process_server_message(self, msg):
         if msg:
+            #print(msg)
+
+
+            if 'N' in msg:
+                self.acked_message_numbers.append(msg['N'])
+                if len(self.acked_message_numbers) > 6:
+                    self.acked_message_numbers.pop(0)
+                del(msg['N'])
+
+            if 'A' in msg:
+                self.latency_list = np.append(self.latency_list, (self.acked_message_numbers[-1] - int(msg['A']))*constant.TICKRATE)
+                self.latency = np.average(self.latency_list)
+                self.latency_list = self.latency_list[-3:-1]
+                del(msg['A'])
+
             if 'NEW' in msg:  # Add new ents first to not cause confusion
                 for new_ent in msg['NEW']:  # in new message: [[class_id, entity_id], [class_id, entity_id], ...]
-                    spawned_entity = entity_table.entity_table[new_ent[0]][1]()
-                    spawned_entity._id = new_ent[1]
-                    self.entity_dict[str(new_ent[1])] = spawned_entity
-                    print(msg['NEW'])
-                    print("Created new entity", spawned_entity)
+                    if str(new_ent[1]) not in self.entity_dict:
+                        spawned_entity = entity_table.entity_table[new_ent[0]][1]()
+                        spawned_entity._id = new_ent[1]
+
+                        self.entity_dict[str(new_ent[1])] = spawned_entity
+                        print("Created new entity", spawned_entity)
                 del (msg['NEW'])  # Delete the "NEW" stuff because we don't need it ever again
 
             if 'DEL' in msg:
@@ -148,6 +182,7 @@ class Client:
             # This way of doing the camera should be changed to save bandwidth
             if 'CAM' in msg:
                 self.camera_ent = self.entity_dict[str(msg['CAM'])]
+                print("CAMENT", msg['CAM'])
                 del (msg['CAM'])
 
             if 'LEV' in msg:
@@ -167,14 +202,16 @@ class Client:
                 last_action = int(msg['ACT'])
                 del msg['ACT']
             if msg:
-                for _id in self.entity_dict:
-                    if _id in msg:
-                        msg[_id]["TICK"] = str(self.tick_number)
-                        self.entity_dict[_id].snapshots.append(msg[_id])
-                    else:
-                        decompress = self.entity_dict[_id].snapshots[-1].copy()
-                        decompress["TICK"] = str(self.tick_number)
-                        self.entity_dict[_id].snapshots.append(decompress)
+                for _id in msg:
+                    msg[_id]["TICK"] = str(self.tick_number)
+                    olddata = {}
+                    for netvar in self.entity_dict[_id].data_table:
+                        olddata[netvar] = self.entity_dict[_id].data_table[netvar].var
+                    for netvar in msg[_id]:
+                        olddata[netvar] = msg[_id][netvar]
+                    print(olddata)
+                    for netvar in self.entity_dict[_id].snapshots:
+                        self.entity_dict[_id].snapshots[netvar].append(olddata[netvar])
 
         return
 
@@ -191,6 +228,7 @@ class Client:
         for _id in self.entity_dict:
             self.entity_dict[_id].update(self.prediction_world)
             cam = (self.camera_ent.netxpos.var-self.SCREEN_WIDTH//2, self.camera_ent.netypos.var-self.SCREEN_HEIGHT//2)
+            #cam = (self.prediction_car.xpos-self.SCREEN_WIDTH//2, self.prediction_car.ypos-self.SCREEN_HEIGHT//2)
             self.entity_dict[_id].draw(pg, self.screen, cam)
         self.loop_start_time = time.perf_counter()
         # Draw client ents
@@ -227,21 +265,24 @@ class Client:
         self.prediction_car.omega = player_car.netomega.var
         self.prediction_car.health = 100
         self.prediction_car.dead = False
-
+        delay = int(self.lerp_delay_ticks*self.action_send_rate/self.tickrate)
+        #delay = self.lerp_delay_ticks
         i = 0
         while True:
+            #Just simplify lol3
+
             if i > len(self.action_history)-1:
                 break
             if i == len(self.action_history) - 1:
 
                 time1 = self.action_history[i]["TICK"]
-                time2 = self.tick_number
+                time2 = self.input_tick_number
             else:
                 time1 = self.action_history[i]["TICK"]
                 time2 = self.action_history[i+1]["TICK"]
-            time1 = max(time1, self.tick_number-self.lerp_delay_ticks-1)
-            self.prediction_world.dt = 10 / self.tickrate
-            if time2 >= self.tick_number-self.lerp_delay_ticks:
+            time1 = max(time1, self.input_tick_number-delay-1)
+            self.prediction_world.dt = 10 / self.action_send_rate
+            if time2 >= self.input_tick_number-delay:
                 for j in range((time2-time1)):
                     self.prediction_car.update(self.prediction_world, self.action_history[i])
 

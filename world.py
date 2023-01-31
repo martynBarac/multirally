@@ -4,8 +4,9 @@ import random
 import game
 
 MAX_SNAPSHOT_HISTORY = 100
-class World:
 
+
+class World:
     def __init__(self, level_name):
         self.player_table = {} # Holds all players {Class: client, ...}
         self.entdict = {} # Holds all entities {id: Class}
