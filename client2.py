@@ -2,13 +2,14 @@ import pygame as pg
 import time
 import math
 
+import pygame.font
+
 import constant
 from constant import *
 from network import *
 from powerup import *
 import entity_table
 import game
-import sys
 import numpy as np
 import world
 
@@ -17,7 +18,7 @@ import world
 TODO: Snapshot list should undo delta compression for easy interp
 """
 
-
+pg.font.init()
 class Client:
     def __init__(self, ip, port):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -29,12 +30,16 @@ class Client:
         print("connected!")
 
         self.latency = 0
+        self.fake_latency = 0
+        self.message_history = []
         self.action_history = []
         self.action_number = 0
         self.tick_number = 0
         self.input_tick_number = 0
-        self.action_send_rate = constant.TICKRATE*2
-        self.tickrate = 64
+
+        self.tickrate = 128
+        self.action_send_rate = self.tickrate
+        self.rate_mod = 0
         self.framerate = 64
         self.ack_rate = 3
 
@@ -42,7 +47,7 @@ class Client:
         self.static_ents = []
         self.dat_lvl = {"wall":[]}
         self.snapshots = {}
-        self.lerp_delay_ticks = 16
+        self.lerp_delay_ticks = 32
 
         self.camera_ent = None
         self.SCREEN_WIDTH = 640
@@ -56,8 +61,13 @@ class Client:
         self.loop_start_time = time.perf_counter()
 
         self.acked_message_numbers = []
+        self.acked_message_times = []
+        self.ack_message_numbers = []
 
-        self.latency_list = np.array([0,0,0,0])
+        self.kbpersec = 0
+        self.kbpersec_list = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+        self.latency_list = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+        self.font = pygame.font.SysFont('Arial', 12)
 
     def main_loop(self):
         game_running = True
@@ -71,36 +81,42 @@ class Client:
                     game_running = False
 
             try:
-                self.net_client.receive_msg()
+                msg, addr = self.net_client.receive_msg()
+
                 pass
             except BlockingIOError:
                 pass
+
             self.net_client.load_unread_messages(self.server_addr)
             msg = self.net_client.read_oldest_message(self.server_addr)
-            self.process_server_message(msg)
+            if msg:
+                self.message_history.append(msg)
+                if len(self.message_history) > self.fake_latency:
+                    self.process_server_message(self.message_history[0])
+                    self.message_history.pop(0)
 
             end_time = time.perf_counter()
-            if end_time - start_time >= 1/self.tickrate:
+            if end_time - start_time >= 1/(self.tickrate+self.rate_mod):
                 self.client_prediction(self.camera_ent)
                 start_time = time.perf_counter()
-                self.tick_number += 1
+                if self.tick_number != -1:
+                    self.tick_number += 1
                 end_time = time.perf_counter()
                 self.input_tick_number += 1
                 if end_time - start_time_input_send >= 1 / self.action_send_rate:
                     self.get_inputs()
                     start_time_input_send = time.perf_counter()
 
-
             if end_time - start_time_ack >= 1/self.ack_rate:
-                self.net_client.send_msg({"N": self.acked_message_numbers}, self.server_addr)
+                self.net_client.send_msg({"N": self.ack_message_numbers}, self.server_addr)
                 start_time_ack = time.perf_counter()
-
 
             end_time = time.perf_counter()
             if end_time - start_time_framerate >= 1/self.framerate:
                 self.update_entity_table()
                 self.draw_entities()
                 start_time_framerate = time.perf_counter()
+
     def get_inputs(self):
         client_actions = ACTIONS.copy()
         keyboard_inputs = pg.key.get_pressed()
@@ -147,19 +163,26 @@ class Client:
 
     def process_server_message(self, msg):
         if msg:
-            #print(msg)
-
-
             if 'N' in msg:
                 self.acked_message_numbers.append(msg['N'])
-                if len(self.acked_message_numbers) > 6:
-                    self.acked_message_numbers.pop(0)
+                self.ack_message_numbers.append(msg['N'])
+                self.acked_message_times.append(time.perf_counter())
+                if len(self.ack_message_numbers) > 6:
+                    self.ack_message_numbers.pop(0)
                 del(msg['N'])
 
             if 'A' in msg:
-                self.latency_list = np.append(self.latency_list, (self.acked_message_numbers[-1] - int(msg['A']))*constant.TICKRATE)
-                self.latency = np.average(self.latency_list)
-                self.latency_list = self.latency_list[-3:-1]
+                try:
+                    acked_msg_index = self.acked_message_numbers.index(int(msg['A']))
+                    self.latency_list = np.append(self.latency_list,
+                                                  (time.perf_counter() - self.acked_message_times[acked_msg_index]))
+                    self.latency = np.average(self.latency_list)
+                    self.latency_list = self.latency_list[-10:]
+                    self.acked_message_numbers.pop(acked_msg_index)
+                    self.acked_message_times.pop(acked_msg_index)
+                except ValueError:
+                    pass
+
                 del(msg['A'])
 
             if 'NEW' in msg:  # Add new ents first to not cause confusion
@@ -201,6 +224,14 @@ class Client:
             if 'ACT' in msg:
                 last_action = int(msg['ACT'])
                 del msg['ACT']
+
+            msg_server_tick_number_client = self.tick_number
+            if 'T' in msg:
+                msg_server_tick_number = int(msg['T'])
+                msg_server_tick_number_client = round(msg_server_tick_number*self.tickrate/constant.TICKRATE)
+                #self.tick_number = msg_server_tick_number_client
+                del msg['T']
+
             for _id in self.entity_dict:
                 olddata = {}
                 for netvar in self.entity_dict[_id].snapshots:
@@ -253,6 +284,10 @@ class Client:
             sides[i] = sides[i] + translation
         for i in range(len(sides)):
             pg.draw.line(self.screen, (0, 255, 0), sides[i - 1], sides[i])
+        text_ping = self.font.render(str(int(self.latency*1000)), False, (128,128,128))
+        text_rate = self.font.render(str(int(self.net_client.bytes_recvd / 1000)), False, (128, 128, 128))
+        self.screen.blit(text_ping, (0,0))
+        self.screen.blit(text_rate, (300, 0))
         pg.display.update()
         return
 
@@ -268,8 +303,7 @@ class Client:
         self.prediction_car.omega = player_car.netomega.var
         self.prediction_car.health = 100
         self.prediction_car.dead = False
-        #delay = int(self.lerp_delay_ticks*self.action_send_rate/self.tickrate)
-        delay = self.lerp_delay_ticks
+        delay = self.lerp_delay_ticks + round(self.latency*self.tickrate)
         i = 0
         while True:
             #Just simplify lol3

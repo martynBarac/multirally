@@ -14,6 +14,5 @@ else:
     PORT = 2302
 
 IP = addr[0]
-
 my_client = client2.Client(IP, PORT)
 my_client.main_loop()

@@ -42,6 +42,7 @@ class Server:
         self.client_last_acked_message = {}
 
         self.read_thread = threading.Thread(target=self.read_client_messages)
+        self.read_thread.daemon = True
         self.read_thread.start()
 
     def update(self):
@@ -71,6 +72,7 @@ class Server:
                     self.message_number_for_client[addr] += 1
                     self.data_table[addr]["N"] = self.message_number_for_client[addr]
                     self.data_table[addr]["A"] = self.client_last_acked_message[addr]
+                    self.data_table[addr]["T"] = self.tick_number
                     for msgnum in self.client_unacked_messages[addr]:
                         if self.message_number_for_client[addr] - msgnum >= 2:
                             print("not acked", msgnum)
@@ -81,11 +83,11 @@ class Server:
         self.data_table = self.world.update(self.client_input_table)  # big slow update
 
         time_elapsed = time.perf_counter() - self.start_time
-        self.world.dt = (time_elapsed) * 10
-        self.start_time = time.perf_counter()
+        self.world.dt = (1 / constant.TICKRATE) * 10
 
-        time.sleep(max(1 / constant.TICKRATE - time.perf_counter() + self.start_time, 0))
-        self.tick_number += 1
+
+        time.sleep(max(1 / constant.TICKRATE - time_elapsed, 0))
+        self.start_time = time.perf_counter()
         return
 
     def read_client_messages(self):
@@ -137,52 +139,6 @@ class Server:
         newmsg["LEV"] = msg["LEV"]
         return newmsg
 
-    def update_tcp(self):
-        """Old TCP version of server update"""
-
-        readable, writeable, exception = select.select(self.maybe_readable, self.maybe_writeable, self.maybe_readable)
-        for s in readable:
-            if s == self.sock:
-                conn, addr = s.accept()
-                conn.setblocking(0)
-                self.maybe_readable.append(conn)
-                self.maybe_writeable.append(conn)
-                self.network_dict[conn] = Network(conn)
-                self.world.add_new_player(conn, "car")
-                self.new_clients.append(conn)
-                print(addr, "Connected!")
-            else:
-                try:
-                    self.network_dict[s].receive_msg() # Get the client inputs
-                    self.network_dict[s].load_unread_messages()
-                    while True:
-                        msg = self.network_dict[s].read_oldest_message()
-                        if msg is None:
-                            break
-                        self.client_input_table[s] = msg
-                        self.client_last_action_number[s] = msg['a']
-                except (ConnectionResetError, ConnectionAbortedError):
-                    del(self.network_dict[s])
-                    self.maybe_readable.remove(s)
-                    self.maybe_writeable.remove(s)
-                    writeable.remove(s)
-                    self.world.destroy_player(s)
-
-        for s in writeable:
-            if s in self.new_clients:
-                pid = self.world.get_camera_for_player(s)
-                gamestate = self.world.send_entire_gamestate(s)
-                if pid is not None:
-                    gamestate["CAM"] = pid
-                gamestate["LEV"] = self.world.level_name
-                self.network_dict[s].send_msg(gamestate)
-                self.new_clients.remove(s)
-            else:
-                if s in self.data_table:
-                    if s in self.client_last_action_number:
-                        self.data_table[s]["ACT"] = self.client_last_action_number[s]
-                    self.network_dict[s].send_msg(self.data_table[s])
-
 
         # Start updating world
         self.data_table = self.world.update(self.client_input_table) # big slow update
@@ -190,7 +146,7 @@ class Server:
         time_elapsed = time.perf_counter() - self.start_time
         self.world.dt = (time_elapsed) * 10
         self.start_time = time.perf_counter()
-        delay = max(1 / constant.TICKRATE - time.perf_counter()+self.start_time, 0)
+        delay = max(1 / constant.TICKRATE - time_elapsed, 0)
         if delay == 0:
             print("TICK SKIP SERVER IS SLOW")
         time.sleep(delay)

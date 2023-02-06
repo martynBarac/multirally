@@ -6,7 +6,7 @@ import time
 from player import Player
 from powerup import Powerup
 
-BUFFERSIZE = 8000
+BUFFERSIZE = 1024
 
 HEAD_PINFO = "PINF"
 HEAD_USERINFO = "UINF"
@@ -14,6 +14,7 @@ HEAD_PLAYERINPUT = "PINP"
 HEAD_POWERINFO = "POWR"
 TICKRATE = 30
 FAKE_LOSS_CHANCE = 0.00
+
 
 class Network:
     def __init__(self, sock):
@@ -55,6 +56,7 @@ class Network:
                 self.unread_messages[msg_addr] = self.unread_messages[msg_addr]+msg_json
             else:
                 self.unread_messages[msg_addr] = msg_json
+            #print(msg_bytes)
             return msg_json, msg_addr
         except BlockingIOError:
             return None, None
