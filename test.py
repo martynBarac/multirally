@@ -54,6 +54,5 @@ def client_test():
     while True:
 
         msg = my_client.receive_msg()
-        print(msg)
 
 server_test()

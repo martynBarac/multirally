@@ -3,6 +3,7 @@ import math
 import numpy
 import numpy as np
 
+
 class Entity:
     def __init__(self):
         self._id = None
@@ -61,7 +62,7 @@ class Entity:
             return self.updated[client]
         else:
             self.updated[client] = True
-            return True
+            return False
 
     def apply_data_table(self, tick, delay):
         for netvar in self.snapshots:
@@ -109,7 +110,6 @@ class Entity:
 class CEntity(Entity):
     def __init__(self):
         Entity.__init__(self)
-
 
     def update(self, world):
         pass

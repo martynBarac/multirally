@@ -12,13 +12,9 @@ import entity_table
 import game
 import numpy as np
 import world
-
-"""
-
-TODO: Snapshot list should undo delta compression for easy interp
-"""
-
 pg.font.init()
+
+
 class Client:
     def __init__(self, ip, port):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -164,8 +160,12 @@ class Client:
     def process_server_message(self, msg):
         if msg:
             if 'N' in msg:
-                self.acked_message_numbers.append(msg['N'])
-                self.ack_message_numbers.append(msg['N'])
+                msg['A'] = msg['N'][1]
+                msg['T'] = msg['N'][2]
+                msg['N'] = msg['N'][0]
+                mnum = msg['N']
+                self.acked_message_numbers.append(mnum)
+                self.ack_message_numbers.append(mnum)
                 self.acked_message_times.append(time.perf_counter())
                 if len(self.ack_message_numbers) > 6:
                     self.ack_message_numbers.pop(0)
@@ -173,7 +173,7 @@ class Client:
 
             if 'A' in msg:
                 try:
-                    acked_msg_index = self.acked_message_numbers.index(int(msg['A']))
+                    acked_msg_index = self.acked_message_numbers.index(msg['A'])
                     self.latency_list = np.append(self.latency_list,
                                                   (time.perf_counter() - self.acked_message_times[acked_msg_index]))
                     self.latency = np.average(self.latency_list)
@@ -184,6 +184,13 @@ class Client:
                     pass
 
                 del(msg['A'])
+
+            msg_server_tick_number_client = self.tick_number
+            if 'T' in msg:
+                msg_server_tick_number = int(str(msg['T']))
+                msg_server_tick_number_client = round(msg_server_tick_number * self.tickrate / constant.TICKRATE)
+                # self.tick_number = msg_server_tick_number_client
+                del msg['T']
 
             if 'NEW' in msg:  # Add new ents first to not cause confusion
                 for new_ent in msg['NEW']:  # in new message: [[class_id, entity_id], [class_id, entity_id], ...]
@@ -224,13 +231,6 @@ class Client:
             if 'ACT' in msg:
                 last_action = int(msg['ACT'])
                 del msg['ACT']
-
-            msg_server_tick_number_client = self.tick_number
-            if 'T' in msg:
-                msg_server_tick_number = int(msg['T'])
-                msg_server_tick_number_client = round(msg_server_tick_number*self.tickrate/constant.TICKRATE)
-                #self.tick_number = msg_server_tick_number_client
-                del msg['T']
 
             for _id in self.entity_dict:
                 olddata = {}

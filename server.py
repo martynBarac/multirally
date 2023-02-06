@@ -7,6 +7,7 @@ import select
 import world
 import threading
 
+
 class Server:
     def __init__(self, ip, port, lvl):
         self.MAXPLAYERS = 1
@@ -61,7 +62,7 @@ class Server:
                 self.message_number_for_client[addr] = 0
                 self.client_unacked_messages[addr] = {}
                 self.client_last_acked_message[addr] = 0
-                gamestate["N"] = self.message_number_for_client[addr]
+                gamestate["N"] = [self.message_number_for_client[addr], 0, 0]
                 self.net_server.send_msg(gamestate, addr)
                 self.new_clients.remove(addr)
                 print(addr, "connected")
@@ -70,9 +71,7 @@ class Server:
                     if addr in self.client_last_action_number:
                         self.data_table[addr]["ACT"] = self.client_last_action_number[addr]
                     self.message_number_for_client[addr] += 1
-                    self.data_table[addr]["N"] = self.message_number_for_client[addr]
-                    self.data_table[addr]["A"] = self.client_last_acked_message[addr]
-                    self.data_table[addr]["T"] = self.tick_number
+                    self.data_table[addr]["N"] = [self.message_number_for_client[addr], self.client_last_acked_message[addr], self.tick_number]
                     for msgnum in self.client_unacked_messages[addr]:
                         if self.message_number_for_client[addr] - msgnum >= 2:
                             print("not acked", msgnum)
@@ -117,9 +116,10 @@ class Server:
 
                     if 'N' in msg:
                         for i in msg['N']:
-                            self.client_last_acked_message[addr] = max(self.client_last_acked_message[addr], int(i))
-                            if int(i) in self.client_unacked_messages:
-                                del (self.client_unacked_messages[int(i)])
+                            i = str(i)
+                            self.client_last_acked_message[addr] = max(self.client_last_acked_message[addr], int(i, 16))
+                            if int(i, 16) in self.client_unacked_messages:
+                                del (self.client_unacked_messages[int(i, 16)])
                     else:
                         self.client_input_table[addr] = msg
 

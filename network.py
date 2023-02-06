@@ -30,22 +30,6 @@ class Network:
     def __del__(self):
         self.close()
 
-    def add_new_msg_reliable(self, data_table):
-        msg = (self.message_number, data_table)
-        self.messages_to_send.append(msg)
-
-    def send_messages_reliable(self):
-        for message in self.messages_to_send:
-            msg_json = json.dumps(message)
-            msg_bytes = msg_json.encode()
-            sent_bytes = 0
-            msg_length = len(msg_bytes)
-            while msg_length > sent_bytes:
-                sent = self.sock.send(msg_bytes[sent_bytes:])
-                if sent == 0:
-                    raise RuntimeError("socket connection broken")
-                sent_bytes += sent
-
     def receive_msg(self):
         # Simply recieve the message as a json string and return it
         try:
@@ -56,7 +40,7 @@ class Network:
                 self.unread_messages[msg_addr] = self.unread_messages[msg_addr]+msg_json
             else:
                 self.unread_messages[msg_addr] = msg_json
-            #print(msg_bytes)
+            print(msg_bytes)
             return msg_json, msg_addr
         except BlockingIOError:
             return None, None
@@ -106,6 +90,8 @@ class Network:
         if randchance < FAKE_LOSS_CHANCE:
             return
         msg_json = json.dumps(message)
+        msg_json = "".join(msg_json.split())
+        #msg_json = "".join(msg_json.split("\""))
         msg_bytes = msg_json.encode()
         sent_bytes = 0
         msg_length = len(msg_bytes)
