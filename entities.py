@@ -7,9 +7,9 @@ class HitMarker(entity.Entity):
     """Displays a hit circle for the client"""
     def __init__(self, x, y):
         entity.Entity.__init__(self)
-        self.class_id = 4
-        self.netxpos = NetworkVar(self, x, 1)
-        self.netypos = NetworkVar(self, y, 2)
+        self.class_id = 3
+        self.netxpos = NetworkVar(self, x, 0)
+        self.netypos = NetworkVar(self, y, 1)
         self.frames = 0
 
     def update(self, world):
@@ -21,11 +21,10 @@ class HitMarker(entity.Entity):
 class CHitMarker(entity.CEntity):
     def __init__(self):
         entity.CEntity.__init__(self)
-        self.netxpos = NetworkVar(self, 0, 1)
-        self.netypos = NetworkVar(self, 0, 2)
+        self.netxpos = NetworkVar(self, 0, 0)
+        self.netypos = NetworkVar(self, 0, 1)
 
     def draw(self, pg, screen, cam):
-        print("HAAAAAAAAAAA")
         pg.draw.circle(screen, (200, 200, 0), (self.netxpos.var-cam[0], self.netypos.var-cam[1]), 1)
 
 
@@ -35,10 +34,10 @@ class DebugTarget(entity.Entity):
         self.shootable = True
         self.class_id = 4
         self.w = 4
-        self.netxpos = NetworkVar(self, x, 1)
-        self.netypos = NetworkVar(self, y, 2)
+        self.netxpos = NetworkVar(self, x, 0)
+        self.netypos = NetworkVar(self, y, 1)
         self.count = 0
-        self.velocity = 0.1
+        self.velocity = 10
 
     def get_collision_bounds(self):
         return [(self.netxpos.var-self.w, self.netypos.var-self.w),
@@ -47,17 +46,22 @@ class DebugTarget(entity.Entity):
                 (self.netxpos.var+self.w, self.netypos.var+self.w)]
 
     def update(self, world):
-        self.netxpos.set(self.netxpos.var + self.velocity*world.dt, True)
+        self.netypos.set(self.netypos.var + self.velocity*world.dt, True)
+        self.count += world.dt
+        if self.count > 3:
+            self.velocity = -self.velocity
+            self.count = 0
 
     def get_shot(self, damage):
+        print("HIT")
         return
 
 
 class CDebugTarget(entity.CEntity):
     def __init__(self):
         entity.CEntity.__init__(self)
-        self.netxpos = NetworkVar(self, 0, 1, True)
-        self.netypos = NetworkVar(self, 0, 2, True)
+        self.netxpos = NetworkVar(self, 0, 0, True)
+        self.netypos = NetworkVar(self, 0, 1, True)
 
     def draw(self, pg, screen, cam):
         pg.draw.circle(screen, (0, 200, 0), (self.netxpos.var-cam[0], self.netypos.var-cam[1]), 8)

@@ -40,7 +40,6 @@ class Network:
                 self.unread_messages[msg_addr] = self.unread_messages[msg_addr]+msg_json
             else:
                 self.unread_messages[msg_addr] = msg_json
-            print(msg_bytes)
             return msg_json, msg_addr
         except BlockingIOError:
             return None, None

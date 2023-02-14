@@ -95,10 +95,10 @@ class Player(entity.Entity):
                 elif actions[RIGHTARROW]:
                     self.wheeldirection = -math.pi/8
                     self.xvel = 10
-                if actions[SHOOT_BUTTON]:
-                    latency = actions[SHOOT_BUTTON]
-                    if not world.client_world:
-                        self.shoot(world, latency)
+            if actions[SHOOT_BUTTON]:
+                latency = actions[SHOOT_BUTTON]
+                if not world.client_world:
+                    self.shoot(world, latency)
         """
         self.angle = self.angle % (2 * math.pi)
         self.angle = round(self.angle, 10)
@@ -170,8 +170,9 @@ class Player(entity.Entity):
         hit_entity = None
 
         # Rewind the game
-        snapshots_behind = int((latency * 10) // world.dt)
+        snapshots_behind = latency
         fastforward = None
+
 
         if 0 < snapshots_behind < len(world.snapshots) - 1:
             fastforward = world.rewind_to_snapshot_index(-snapshots_behind)  # Rewind to the past
@@ -188,7 +189,6 @@ class Player(entity.Entity):
                     intersect_point = self.line_intersection((colpoint1, colpoint2),
                                                              (hitscan_startpoint, hitscan_endpoint))
                     if intersect_point is not None:
-
                         if colpoint1[0] > colpoint2[0]:
                             rightpoint = colpoint1[0]
                             leftpoint = colpoint2[0]
@@ -202,8 +202,8 @@ class Player(entity.Entity):
                         else:
                             bottompoint = hitscan_endpoint[1]
                             toppoint = hitscan_startpoint[1]
-                        if leftpoint < intersect_point[0] < rightpoint:
-                            if toppoint > intersect_point[1] > bottompoint:
+                        if leftpoint <= intersect_point[0] <= rightpoint:
+                            if toppoint >= intersect_point[1] >= bottompoint:
                                 hit_point = intersect_point
                                 hit_entity = _entity
                                 # The segment hit!
@@ -212,6 +212,7 @@ class Player(entity.Entity):
             world.spawn_entity(hit)
         if fastforward is not None:
             world.rewind_to_snapshot(fastforward)  # Fast forward back to the real
+
         if hit_entity is not None:
             hit_entity.get_shot(1)
 

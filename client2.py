@@ -126,8 +126,8 @@ class Client:
         if keyboard_inputs[pg.K_DOWN]:
             client_actions[DOWNARROW] = True
         if keyboard_inputs[pg.K_c]:
-            client_actions[SHOOT_BUTTON] = self.latency
-
+            d = min(round((self.latency+self.lerp_delay_ticks/self.tickrate)*constant.TICKRATE), constant.TICKRATE)
+            client_actions[SHOOT_BUTTON] = d
         client_actions[ACTION_NUMBER] = self.action_number
         if self.is_action_different(client_actions):
             self.send_inputs(client_actions)
@@ -144,7 +144,7 @@ class Client:
             prev_action = self.action_history[-1].copy()
             del (prev_action["TICK"])
             del (prev_action[ACTION_NUMBER])
-            prev_action[SHOOT_BUTTON] = bool(copy_actions[SHOOT_BUTTON])
+            prev_action[SHOOT_BUTTON] = bool(prev_action[SHOOT_BUTTON])
             if copy_actions == prev_action:
                 return False
         return True
@@ -320,6 +320,8 @@ class Client:
             time1 = max(time1, self.input_tick_number-delay-1)
             self.prediction_world.dt = 10 / self.tickrate
             if time2 >= self.input_tick_number-delay:
+
+
                 for j in range((time2-time1)):
                     self.prediction_car.update(self.prediction_world, self.action_history[i])
 

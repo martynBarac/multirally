@@ -41,7 +41,7 @@ class Entity:
         for _id in self.data_table:
             netvar = self.data_table[_id]
             # If the netvar is only for the owner
-            if netvar.only_send_to_owner:
+            if netvar.only_send_to_owner or send_everything:
                 if self.owner != client: # This client is not the owner so
                     continue #skip sending
             # If the netvar is updated add it to the table to send
@@ -80,30 +80,9 @@ class Entity:
                 self.snapshots[netvar] = [self.snapshots[netvar][-1]]
                 self.snapshots_xvals[netvar] = [self.snapshots[netvar][-1]]
 
-    def apply_data_table_lerp(self, datatable1, datatable2, x, x0, x1):
-        if datatable1 is not None:
-            if datatable2 is not None:
-                for _id in datatable1:
-                    if _id == "TICK": continue
-                    __id = int(_id)
-                    if _id not in datatable2 or not self.data_table[__id].lerp:
-                        self.data_table[__id].var = datatable1[_id]
-                    elif self.data_table[__id].slerp:
-                        y0 = datatable1[_id]
-                        y1 = datatable2[_id]
-                        #if abs(y0-y1) <= math.pi:
-                        #    y = y0 * (x1-x)/(x1-x0) + y1 * (x-x0)/(x1-x0)
-                        #    self.data_table[__id].var = y
-                        #else:
-                        self.data_table[__id].var = y0
-                    elif self.data_table[__id].lerp:
-                        y0 = datatable1[_id]
-                        y1 = datatable2[_id]
-                        if x1 == x0:
-                            y = y1
-                        else:
-                            y = y0 * (x1 - x) / (x1 - x0) + y1 * (x - x0) / (x1 - x0)
-                        self.data_table[__id].var = y
+    def set_state(self, input_datatable):
+        for netvar in input_datatable:
+            self.data_table[netvar].var = input_datatable[netvar]
         return
 
 

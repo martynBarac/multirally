@@ -40,6 +40,7 @@ def server_test():
     my_server = server.Server( socket.gethostbyname(socket.gethostname() ), 2302, "level0")
     my_server.world.add_new_entity(Powerup(128, 128, 0))
     while True:
+
         my_server.update()
 
 

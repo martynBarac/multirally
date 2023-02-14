@@ -29,8 +29,8 @@ class World:
         self.delete_ents = [] # a list of ents that need to be deleted
         self.collision_sectors = [[]]
         self.collision_sector_size = 256
-        self.entites_to_spawn = [] #Q ueue up entities to spawn in the next frame
-        #self.add_new_entity(entity_table.entity_table[4][0](64, 64))
+        self.entites_to_spawn = [] #Q ueue upadd_new_entity entities to spawn in the next frame
+        self.add_new_entity(entity_table.entity_table[4][0](240, 96))
 
     def add_new_player(self, client, name):
         spawnx, spawny = self.level["spawn"][0] # Get first spawn point
@@ -102,7 +102,7 @@ class World:
         for _id in game_state:
             if _id in self.entdict:
                 if self.entdict[_id] is not None:
-                    self.entdict[_id].apply_data_table(game_state[_id])
+                    self.entdict[_id].set_state(game_state[_id])
 
     def rewind_to_snapshot_number(self, snapshot_number):
         old_data = self.send_entire_gamestate(None)

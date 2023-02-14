@@ -68,7 +68,6 @@ class NetworkVarLegacy:
         self.updated = True
         self.lerp = lerp
         self.quantise = -1
-
         ent.data_table[_id] = self
 
     def get(self, dt):
