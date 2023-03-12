@@ -161,11 +161,14 @@ class World:
                     if ent.get_updated(client):
                         if ent.actor and ent != player:
                             # If we're on the screen then send info
+                            print(abs(ent.netxpos.var - player.netxpos.var))
                             if abs(ent.netxpos.var - player.netxpos.var) < 320 \
-                                    or abs(ent.netypos.var - player.netypos.var) < 240:
+                                    and abs(ent.netypos.var - player.netypos.var) < 240:
                                 ent_data_table = ent.prepare_data_table(client)
                                 data_table[_id] = ent_data_table
                                 ent.updated[client] = False
+                            else:
+                                print("outside_screen")
                         else:
                             ent_data_table = ent.prepare_data_table(client)
                             data_table[_id] = ent_data_table

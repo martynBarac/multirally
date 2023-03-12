@@ -43,7 +43,7 @@ class Client:
         self.static_ents = []
         self.dat_lvl = {"wall":[]}
         self.snapshots = {}
-        self.lerp_delay_ticks = 32
+        self.lerp_delay_ticks = 16
 
         self.camera_ent = None
         self.SCREEN_WIDTH = 640
@@ -259,11 +259,18 @@ class Client:
         end_time = time.perf_counter()
         if self.prediction_world is not None: self.prediction_world.dt = end_time-self.loop_start_time
         cam = (0,0)
+        cam = (self.prediction_car.xpos - self.SCREEN_WIDTH // 2, self.prediction_car.ypos - self.SCREEN_HEIGHT // 2)
         for _id in self.entity_dict:
-            self.entity_dict[_id].update(self.prediction_world)
+            ent = self.entity_dict[_id]
+            if ent.actor:
+                if abs(ent.netxpos.var - self.prediction_car.xpos) > self.SCREEN_WIDTH // 2 \
+                        or abs(ent.netypos.var - self.prediction_car.ypos) > self.SCREEN_HEIGHT // 2:
+                    ent.netxpos.var = 0
+                    ent.netypos.var = 0
+            ent.update(self.prediction_world)
             #cam = (self.camera_ent.netxpos.var-self.SCREEN_WIDTH//2, self.camera_ent.netypos.var-self.SCREEN_HEIGHT//2)
-            cam = (self.prediction_car.xpos-self.SCREEN_WIDTH//2, self.prediction_car.ypos-self.SCREEN_HEIGHT//2)
-            self.entity_dict[_id].draw(pg, self.screen, cam)
+
+            ent.draw(pg, self.screen, cam)
         self.loop_start_time = time.perf_counter()
         # Draw client ents
         for prop in self.static_ents:
@@ -306,8 +313,6 @@ class Client:
         delay = self.lerp_delay_ticks + round(self.latency*self.tickrate)
         i = 0
         while True:
-            #Just simplify lol3
-
             if i > len(self.action_history)-1:
                 break
             if i == len(self.action_history) - 1:
@@ -320,7 +325,6 @@ class Client:
             time1 = max(time1, self.input_tick_number-delay-1)
             self.prediction_world.dt = 10 / self.tickrate
             if time2 >= self.input_tick_number-delay:
-
 
                 for j in range((time2-time1)):
                     self.prediction_car.update(self.prediction_world, self.action_history[i])

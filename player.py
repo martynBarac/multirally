@@ -13,7 +13,7 @@ DOWNARROW = '4'
 
 
 class Player(entity.Entity):
-    def __init__(self, x, y, angle, name, owner = None):
+    def __init__(self, x = 0, y = 0, angle = 0, name = "default", owner = None):
         entity.Entity.__init__(self)
         self.class_id = 1
         self.owner = owner
@@ -65,7 +65,7 @@ class Player(entity.Entity):
 
         self.strength = 2
 
-    def update(self, world, actions):
+    def update(self, world, actions = ACTIONS):
         # world variables
         dt = world.dt
 
@@ -80,26 +80,26 @@ class Player(entity.Entity):
         wheel_pos_rear = -8
         wheel_pos_front = 8
         if not self.dead:
-            self.yvel=0
-            self.xvel = 0
+            #self.yvel=0
+            #self.xvel = 0
             if UPARROW in actions:
                 if actions[UPARROW]:
                     throttle = self.engine_power
-                    self.yvel =-10
+                    #self.yvel =-10
                 elif actions[DOWNARROW]:
                     throttle = -self.engine_power/2
-                    self.yvel = 10
+                    #self.yvel = 10
                 if actions[LEFTARROW]:
                     self.wheeldirection = math.pi/8
-                    self.xvel = -10
+                    #self.xvel = -10
                 elif actions[RIGHTARROW]:
                     self.wheeldirection = -math.pi/8
-                    self.xvel = 10
+                    #self.xvel = 10
             if actions[SHOOT_BUTTON]:
                 latency = actions[SHOOT_BUTTON]
                 if not world.client_world:
                     self.shoot(world, latency)
-        """
+
         self.angle = self.angle % (2 * math.pi)
         self.angle = round(self.angle, 10)
         speed = np.hypot(self.xvel, self.yvel)
@@ -121,7 +121,7 @@ class Player(entity.Entity):
         self.apply_force(0, throttle)
         self.apply_force(0, -force_drag)
         self.apply_force(math.pi/2, force_drag_lat)
-        """
+
 
 
         # Apply the goods
@@ -336,6 +336,7 @@ class Player(entity.Entity):
 class CPlayer(entity.CEntity):
     def __init__(self):
         entity.CEntity.__init__(self)
+        self.class_id = 1
         self.name = NetworkVar(self, "", 0)
         self.netxpos = NetworkVar(self, 0, 1, True)
         self.netypos = NetworkVar(self, 0, 2, True)
@@ -348,6 +349,7 @@ class CPlayer(entity.CEntity):
         self.orgimage = pg.image.load("sprites/car.png").convert_alpha()
         self.colour = (128, 128, 128)
         self.rotimage = self.orgimage.copy()
+        self.actor = True
 
     def update(self, world=None ,actions=None):
         if np.array_equal(self.netcolour.var, self.colour):

@@ -70,7 +70,10 @@ class Entity:
                 yvals = self.snapshots[netvar]
                 xvals = self.snapshots_xvals[netvar]
                 if len(xvals) != 0:
-                    y = np.interp(tick, xvals, yvals)
+                    if self.data_table[netvar].slerp:
+                        y = np.mod(np.interp(tick, xvals, np.unwrap(yvals)), 2*math.pi)
+                    else:
+                        y = np.interp(tick, xvals, yvals)
                     self.data_table[netvar].var = y
                     mask = self.snapshots_xvals[netvar] > tick-delay*2
                     self.snapshots_xvals[netvar] = self.snapshots_xvals[netvar][mask]

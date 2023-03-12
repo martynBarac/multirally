@@ -37,7 +37,8 @@ def world_test():
 def server_test():
 
     # socket.gethostbyname(socket.gethostname() gets ip address
-    my_server = server.Server( socket.gethostbyname(socket.gethostname() ), 2302, "level0")
+    my_server = server.Server( socket.gethostbyname(socket.gethostname() ), 27015, "level0")
+    #my_server = server.Server("192.168.0.19", 27015, "level0")
     my_server.world.add_new_entity(Powerup(128, 128, 0))
     while True:
 
@@ -46,8 +47,8 @@ def server_test():
 
 def client_test():
 
-    port = 27015
-    ip = "192.168.0.19"
+    port = 27014
+    ip = "ff"
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     my_client = network.Network(sock)

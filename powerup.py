@@ -33,11 +33,12 @@ class Powerup(entity.Entity):
 class CPowerup(entity.CEntity):
     def __init__(self):
         entity.CEntity.__init__(self)
-        self.xpos = NetworkVar(self, 0, 1)
-        self.ypos = NetworkVar(self, 0, 2)
+        self.netxpos = NetworkVar(self, 0, 1)
+        self.netypos = NetworkVar(self, 0, 2)
         self.type = NetworkVar(self, 0, 0)
         self.check_type = True
         self.image = None
+        self.actor = False
 
     def draw(self, pg, screen, cam):
         if self.check_type:
@@ -45,7 +46,7 @@ class CPowerup(entity.CEntity):
                 self.image = pg.image.load('sprites/health.png').convert()
 
             self.check_type = False
-        rect = [self.xpos.var-cam[0], self.ypos.var-cam[1], 8, 8]
+        rect = [self.netxpos.var-cam[0], self.netypos.var-cam[1], 8, 8]
         screen.blit(self.image, rect)
         #pg.draw.rect(screen, (200, 200, 0), rect)
         return rect

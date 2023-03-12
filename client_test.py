@@ -11,7 +11,7 @@ addr = addr.split(":")
 if len(addr) > 1:
     PORT = int(addr[1])
 else:
-    PORT = 2302
+    PORT = 27015
 
 IP = addr[0]
 my_client = client2.Client(IP, PORT)
